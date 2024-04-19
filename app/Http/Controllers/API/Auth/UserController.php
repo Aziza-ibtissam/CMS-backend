@@ -23,7 +23,7 @@ class UserController extends Controller {
             'lastName' => 'required|string',
             'username' => 'required|string|unique:users',
             'email' => 'required|string|email|unique:users',
-            'password' => 'required|string',
+            'password' => 'required|string|min:8', 
             'phoneNumber' => 'required|string',
             'country' => 'required|string',
             'affiliation' => 'required|string',
@@ -49,7 +49,7 @@ class UserController extends Controller {
         $user->save();
         $user->assignRole('user');
         $token = $user->createToken('auth_token')->plainTextToken;
-        //$user->sendEmailVerificationNotification();
+        $user->sendEmailVerificationNotification();
        
         return response()->json(['message' =>'User registered successfully. Please check your email to verify your account.', 'token' => $token, 'user' => $user], 200);
     }
@@ -85,5 +85,45 @@ class UserController extends Controller {
         return response()->json([
             'message' => 'Logged out successfully',
         ], 200);
+    }
+
+    public function update(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'firstName' => 'string',
+            'lastName' => 'string',
+            'username' => 'string|unique:users,username,' . auth()->id(),
+            'email' => 'string|email|unique:users,email,' . auth()->id(),
+            'password' => 'string',
+            'phoneNumber' => 'string',
+            'country' => 'string',
+            'affiliation' => 'string',
+            'dateOfBirth' => 'date',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json($validator->errors(), 400);
+        }
+
+        $user = auth()->user();
+        $user->update($request->all());
+
+        return response()->json(['message' =>'User Update successfully.', 'token' => $token, 'user' => $user], 200);
+    }
+
+    public function delete(Request $request)
+    {
+        $user = auth()->user();
+
+        // Check if the authenticated user has the "admin" role
+        if (!$user->hasRole('admin')) {
+            return response()->json(['error' => 'Unauthorized action.'], 403);
+        }
+
+        // Proceed with user deletion
+        $userToDelete = User::findOrFail($request->user_id);
+        $userToDelete->delete();
+
+        return response()->json(['message' => 'User deleted successfully'], 200);
     }
 }

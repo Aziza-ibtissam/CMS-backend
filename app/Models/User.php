@@ -52,7 +52,32 @@ class User extends Authenticatable implements MustVerifyEmail
     ];
 
     public function sendEmailVerificationNotification()
-{
-    $this->notify(new EmailVerificationNotification);
-}
+    {
+       $this->notify(new EmailVerificationNotification);
+    }
+    public function notifications()
+    {
+        return $this->hasMany(Notification::class);
+    }
+
+    public function papers()
+    {
+        return $this->hasMany(Paper::class);
+    }
+
+    public function reviews()
+    {
+        return $this->hasMany(Review::class);
+    }
+
+    public function sessions()
+    {
+        return $this->hasMany(Session::class);
+    }
+
+    public function conversations()
+    {
+        return $this->hasMany(Conversation::class);
+    }
+
 }
