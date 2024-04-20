@@ -11,11 +11,10 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('forms', function (Blueprint $table) {
+        Schema::create('topics', function (Blueprint $table) {
             $table->id();
-            $table->text('equation');
-            $table->unsignedBigInteger('conference_id');
-            $table->foreign('conference_id')->references('id')->on('conferences')->onDelete('cascade');
+            $table->string('name');
+            $table->string('sub_topics')->nullable();
             $table->timestamps();
         });
     }
@@ -25,6 +24,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('forms');
+        Schema::dropIfExists('topics');
     }
 };

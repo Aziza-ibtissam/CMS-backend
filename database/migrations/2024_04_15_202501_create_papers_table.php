@@ -17,8 +17,7 @@ return new class extends Migration
             $table->dateTime('submitted_at');
             $table->string('status');
             $table->unsignedBigInteger('paper_call_id');
-            $table->foreign('paper_call_id')->references('id')->on('paper_calls')->onDelete('cascade');
-            $table->foreignId('userID')->constrained('users');
+            $table->foreign('paper_call_id')->references('id')->on('paper_calls');            $table->foreignId('userID')->constrained('users');
             $table->timestamps();
         });
     }
@@ -30,4 +29,5 @@ return new class extends Migration
     {
         Schema::dropIfExists('papers');
     }
+
 };

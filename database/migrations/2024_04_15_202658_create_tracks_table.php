@@ -14,8 +14,6 @@ return new class extends Migration
         Schema::create('tracks', function (Blueprint $table) {
             $table->id();
             $table->string('name');
-            $table->unsignedBigInteger('conference_id');
-            $table->foreign('conference_id')->references('id')->on('conferences')->onDelete('cascade');
             $table->timestamps();
         });
     }

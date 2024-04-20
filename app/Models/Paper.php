@@ -17,7 +17,7 @@ class Paper extends Model
     ];
     public function paperCall()
     {
-        return $this->belongsTo(PaperCall::class);
+        return $this->belongsTo(PaperCall::class,'paper_calls');
     }
 
     public function user()

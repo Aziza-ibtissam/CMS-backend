@@ -23,14 +23,11 @@ class User extends Authenticatable implements MustVerifyEmail
     protected $fillable = [
         'firstName',
         'lastName',
-        'username',
         'email',
         'password',
-        'phoneNumber',
         'country',
         'affiliation',
-        'dateOfBirth',
-    ];
+        ];
 
     /**
      * The attributes that should be hidden for serialization.
@@ -55,6 +52,10 @@ class User extends Authenticatable implements MustVerifyEmail
     {
        $this->notify(new EmailVerificationNotification);
     }
+    public function conferences()
+    {
+        return $this->belongsToMany(Conference::class)->withPivot('role');
+    }
     public function notifications()
     {
         return $this->hasMany(Notification::class);
@@ -75,9 +76,5 @@ class User extends Authenticatable implements MustVerifyEmail
         return $this->hasMany(Session::class);
     }
 
-    public function conversations()
-    {
-        return $this->hasMany(Conversation::class);
-    }
 
 }

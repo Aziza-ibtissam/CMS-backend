@@ -15,14 +15,11 @@ class UsersSeeder extends Seeder
         $superAdmin = User::firstOrCreate([
             'email' => 'cmsadmin@gmail.com',
         ], [
-            'username' => 'Super Admin',
             'password' => bcrypt('password123'),
             'firstName' => 'csm',
             'lastName' => 'amin',
-            'phoneNumber' => '1234567890',
             'country' => 'ouargla',
             'affiliation' => 'ouargla',
-            'dateOfBirth' =>'2023-08-15',
         ]);
 
 

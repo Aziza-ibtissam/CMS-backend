@@ -21,13 +21,10 @@ class UserController extends Controller {
         $validator = Validator::make($request->all(), [
             'firstName' => 'required|string',
             'lastName' => 'required|string',
-            'username' => 'required|string|unique:users',
             'email' => 'required|string|email|unique:users',
             'password' => 'required|string|min:8', 
-            'phoneNumber' => 'required|string',
             'country' => 'required|string',
             'affiliation' => 'required|string',
-            'dateOfBirth' => 'required|date',
 
         ]);
 
@@ -38,13 +35,10 @@ class UserController extends Controller {
         $user = User::create([
             'firstName' => $request->firstName,
             'lastName' => $request->lastName,
-            'username' => $request->username,
             'email' => $request->email,
             'password' => Hash::make($request->password),
-            'phoneNumber' => $request->phoneNumber,
             'country' => $request->country,
             'affiliation' => $request->affiliation,
-            'dateOfBirth' => $request->dateOfBirth,
         ]);
         $user->save();
         $user->assignRole('user');
@@ -92,13 +86,10 @@ class UserController extends Controller {
         $validator = Validator::make($request->all(), [
             'firstName' => 'string',
             'lastName' => 'string',
-            'username' => 'string|unique:users,username,' . auth()->id(),
             'email' => 'string|email|unique:users,email,' . auth()->id(),
             'password' => 'string',
-            'phoneNumber' => 'string',
             'country' => 'string',
             'affiliation' => 'string',
-            'dateOfBirth' => 'date',
         ]);
 
         if ($validator->fails()) {

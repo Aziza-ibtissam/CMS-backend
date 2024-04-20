@@ -15,8 +15,6 @@ return new class extends Migration
             $table->id();
             $table->integer('mark');
             $table->text('note')->nullable();
-            $table->unsignedBigInteger('review_id');
-            $table->foreign('review_id')->references('id')->on('reviews')->onDelete('cascade');
             $table->foreignId('userID')->constrained('users');
             $table->timestamps();
 

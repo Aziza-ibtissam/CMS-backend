@@ -15,8 +15,6 @@ return new class extends Migration
             $table->id();
             $table->dateTime('start_at');
             $table->dateTime('end_at');
-            $table->unsignedBigInteger('conference_id');
-            $table->foreign('conference_id')->references('id')->on('conferences')->onDelete('cascade');
             $table->timestamps();
         });
     }

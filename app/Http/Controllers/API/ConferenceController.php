@@ -1,49 +1,131 @@
 <?php
 
-namespace App\Http\Controllers;
-
+namespace App\Http\Controllers\API;
+use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\User;
 use App\Models\Conference;
 use App\Models\Role;
+use App\Rules\AcademicEmail;
 use App\Models\UserRoleInConference;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\Rule;
-
+use App\Mail\ConferenceCreatedMail;
+use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Storage;
 class ConferenceController extends Controller
 {
+
+
+    public function index()
+{
+    $conferences = Conference::all()->map(function ($conference) {
+        $conference->logo_url = Storage::url($conference->logo);
+        return $conference;
+    });
+    
+    return response()->json($conferences);
+}
+
     public function create(Request $request)
     {
         // Validate the request data
         $request->validate([
-            'name' => 'required|string|max:255',
-            'location' => 'required|string|max:255',
-            'start_date' => 'required|date',
-            'end_date' => 'required|date|after_or_equal:start_date',
+            'email' => ['required', 'email', new AcademicEmail],
+            'title' => 'required|string',
+            'acronym' => 'required|string',
+            'city' => 'required|string',
+            'country' => 'required|string',
+            'webpage' => 'required|url',
+            'category' => 'required|string',
+            'start_at' => 'required|date',
+            'end_at' => 'required|date|after:start_at',
+            'paper_subm_date' => 'required|date|after:start_at',
+            'logo' => 'required|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
+
         ]);
 
         // Get the authenticated user
-        $user = $request->user();
+        $userID = Auth::id();
 
         // Create a new conference
         $conference = Conference::create([
-            'name' => $request->input('name'),
-            'location' => $request->input('location'),
-            'start_date' => $request->input('start_date'),
-            'end_date' => $request->input('end_date'),
-            'userID' => $user->id,
+            'email' =>$request->input('email'),
+            'userID' => $userID,
+            'title' => $request->input('title'),
+            'acronym' => $request->input('acronym'),
+            'city' => $request->input('city'),
+            'country' => $request->input('country'),
+            'webpage' => $request->input('webpage'),
+            'category' => $request->input('category'),
+            'start_at' => $request->input('start_at'),
+            'end_at' => $request->input('end_at'),
+            'paper_subm_date' => $request->input('paper_subm_date'),
+            'logo' => $request->file('logo')->store('conferences', 'public'),
+
         ]);
 
         // Assign the chair role to the authenticated user
-        $chairRole = Role::where('name', 'chair')->firstOrCreate(['name' => 'chair']);
-        UserRoleInConference::create([
-            'user_id' => $user->id,
-            'role_id' => $chairRole->id,
-            'conference_id' => $conference->id,
-        ]);
+        $user = Auth::user();
 
-        // Return the conference with the chair role assigned
-        return response()->json(['conference' => $conference, 'chairRole' => $chairRole], 201);
+        $user->conferences()->attach($conference->id, ['role' => 'chair']);
+
+        // Retrieve the user with their role in the conference
+        $userConference = $conference->users()->where('users.id', $user->id)->first();
+
+
+        Mail::to($request->input('email'))->send(new ConferenceCreatedMail($user, $conference));
+        $user->update(['is_verified' => 1]);
+        return response()->json(['conference' => $conference,'user role in conference' => $userConference ], 201);
     }
+
+
+
+
+    public function notAccepted()
+    {
+        // Retrieve conferences where accept column is 0
+        $conferences = Conference::where('is_accept', 0)->get();
+        #$userConference = $conferences->users()->get();
+        
+        return response()->json($conferences );
+    }
+
+
+
+
+    public function accept(Request $request, $id)
+    {
+        // Get the conference
+        $conference = Conference::findOrFail($id);
+
+        // Check if the user is authenticated
+        if (!$request->user()) {
+            return response()->json(['message' => 'Unauthenticated'], 401);
+        }
+
+        // Check if the user has the role of "admin"
+        if ($request->user()->roles->contains('name', 'admin')) {
+            // Update the accept column to 1
+            $conference->is_accept = 1;
+            $conference->save();
+
+            return response()->json(['message' => 'Conference accepted successfully'], 200);
+        }
+    }
+
+
+    public function userConferences(Request $request)
+    {
+        // Retrieve the authenticated user
+        $user = $request->user();
+        
+        // Retrieve conferences for the user along with their role
+        $conferences = $user->conferences()->withPivot('role')->get();
+        
+        return response()->json($conferences);
+    }
+
 
     public function submit(Request $request)
     {
@@ -82,7 +164,7 @@ class ConferenceController extends Controller
         // Validate the request data
         $request->validate([
             'name' => 'required|string|max:255',
-            'location' => 'required|string|max:255',
+            'category' => 'required|string|max:255',
             'start_date' => 'required|date',
             'end_date' => 'required|date|after_or_equal:start_date',
         ]);

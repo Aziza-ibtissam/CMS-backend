@@ -4,6 +4,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\API\Auth\UserController;
 use App\Http\Controllers\API\Auth\EmailVerificationController;
+use App\Http\Controllers\API\ConferenceController;
 use Illuminate\Foundation\Auth\EmailVerificationRequest;
  
 
@@ -36,6 +37,12 @@ Route::get('/verification/verify/{user}', function ($user) {
 
     return response()->json(['message' => 'Your email address has been verified.'], 200);
 });
-Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
-    return $request->user();
+Route::middleware(['auth:sanctum'])->group(function () {
+    Route::get('/all-conferences', [ConferenceController::class,'index']);
+    Route::post('/conferencesrequest', [ConferenceController::class, 'create']);
+    Route::get('/conferences/not-accepted',  [ConferenceController::class, 'notAccepted']);
+    Route::put('/conferences/{id}/accept', [ConferenceController::class ,'accept']);
+    Route::get('/user/conferences', [ConferenceController::class,'userConferences']);
+
+
 });

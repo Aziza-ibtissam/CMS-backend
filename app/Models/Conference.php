@@ -9,18 +9,27 @@ class Conference extends Model
 {
     use HasFactory;
     protected $fillable = [
-        'userID',
+        'email',
+        'title',
         'acronym',
-        'webpage',
-        'address',
+        'city',
         'country',
+        'webpage',
+        'category',
+        'form_id',
+        'topic_id',
+        'paper_call_id',
         'start_at',
         'end_at',
+        'paper_subm_date',
+        'logo',
+        'userID'
     ];
-    public function user()
+    public function users()
     {
-        return $this->belongsTo(User::class);
+        return $this->belongsToMany(User::class)->withPivot('role');
     }
+        
     public function paper()
     {
         return $this->belongsTo(Paper::class);
@@ -28,12 +37,12 @@ class Conference extends Model
 
     public function paperCalls()
     {
-        return $this->hasMany(PaperCall::class);
+        return $this->hasMany(PaperCall::class,'paper_call_id');
     }
 
     public function topics()
     {
-        return $this->hasMany(Topic::class);
+        return $this->hasMany(Topic::class,'topic_id');
     }
 
     public function tracks()
@@ -43,7 +52,7 @@ class Conference extends Model
 
     public function forms()
     {
-        return $this->hasMany(Form::class);
+        return $this->belongsTo(Form::class,'form_id');
     }
 
     public function sessions()
