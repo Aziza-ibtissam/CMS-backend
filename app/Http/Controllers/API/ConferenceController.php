@@ -26,6 +26,16 @@ class ConferenceController extends Controller
     
     return response()->json($conferences);
 }
+public function show($id)
+    {
+        $conferences =Conferences::find($id);
+
+        if (!$conferences) {
+            return response()->json(['message' => 'Conference not found'], 404);
+        }
+
+        return response()->json($conferences);
+    }
 
     public function create(Request $request)
     {
@@ -108,6 +118,25 @@ class ConferenceController extends Controller
         if ($request->user()->roles->contains('name', 'admin')) {
             // Update the accept column to 1
             $conference->is_accept = 1;
+            $conference->save();
+
+            return response()->json(['message' => 'Conference accepted successfully'], 200);
+        }
+    }
+    public function reject(Request $request, $id)
+    {
+        // Get the conference
+        $conference = Conference::findOrFail($id);
+
+        // Check if the user is authenticated
+        if (!$request->user()) {
+            return response()->json(['message' => 'Unauthenticated'], 401);
+        }
+
+        // Check if the user has the role of "admin"
+        if ($request->user()->roles->contains('name', 'admin')) {
+            // Update the accept column to 1
+            $conference->is_accept = 2;
             $conference->save();
 
             return response()->json(['message' => 'Conference accepted successfully'], 200);

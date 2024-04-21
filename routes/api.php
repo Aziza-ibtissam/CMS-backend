@@ -38,10 +38,13 @@ Route::get('/verification/verify/{user}', function ($user) {
     return response()->json(['message' => 'Your email address has been verified.'], 200);
 });
 Route::middleware(['auth:sanctum'])->group(function () {
+    Route::get('users/{id}', [UserController::class,'show']);
+    Route::put('/conferences/{id}', [ConferenceController::class ,'show']);
     Route::get('/all-conferences', [ConferenceController::class,'index']);
     Route::post('/conferencesrequest', [ConferenceController::class, 'create']);
     Route::get('/conferences/not-accepted',  [ConferenceController::class, 'notAccepted']);
     Route::put('/conferences/{id}/accept', [ConferenceController::class ,'accept']);
+    Route::put('/conferences/{id}/reject', [ConferenceController::class ,'reject']);
     Route::get('/user/conferences', [ConferenceController::class,'userConferences']);
 
 
