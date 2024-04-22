@@ -16,14 +16,14 @@ class Conference extends Model
         'country',
         'webpage',
         'category',
-        'form_id',
-        'topic_id',
-        'paper_call_id',
         'start_at',
         'end_at',
-        'paper_subm_date',
+        'paper_subm_due_date',
         'logo',
-        'userID'
+        'userID',
+       'register_due_date',
+       'acceptation_notification',
+       'camera_ready_paper',
     ];
     public function users()
     {
@@ -37,26 +37,27 @@ class Conference extends Model
 
     public function paperCalls()
     {
-        return $this->hasMany(PaperCall::class,'paper_call_id');
+        return $this->hasOne(PaperCall::class);
     }
 
     public function topics()
     {
-        return $this->hasMany(Topic::class,'topic_id');
+        return $this->hasOne(Topic::class,);
     }
 
-    public function tracks()
-    {
-        return $this->hasMany(Track::class);
-    }
+    
 
     public function forms()
     {
-        return $this->belongsTo(Form::class,'form_id');
+        return $this->hasOne(Form::class,);
     }
 
     public function sessions()
     {
         return $this->hasMany(Session::class);
+    }
+    public function tracks()
+    {
+        return $this->hasMany(Track::class);
     }
 }

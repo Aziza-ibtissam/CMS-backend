@@ -13,6 +13,8 @@ return new class extends Migration
     {
         Schema::create('topics', function (Blueprint $table) {
             $table->id();
+            $table->unsignedBigInteger('conference_id');
+            $table->foreign('conference_id')->references('id')->on('conferences')->onDelete('cascade');
             $table->string('name');
             $table->string('sub_topics')->nullable();
             $table->timestamps();

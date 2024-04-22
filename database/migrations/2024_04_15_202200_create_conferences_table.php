@@ -21,15 +21,15 @@ return new class extends Migration
             $table->string('country');
             $table->string('webpage');
             $table->string('category');
-            $table->foreignId('form_id')->nullable()->constrained('forms');
-            $table->foreignId('topic_id')->nullable()->constrained('topics');
-            $table->foreignId('paper_call_id')->nullable()->constrained('paper_calls');
             $table->dateTime('start_at');
             $table->dateTime('end_at');
-            $table->dateTime('paper_subm_date');
+            $table->dateTime('paper_subm_due_date');
+            $table->dateTime('register_due_date')->nullable();
+            $table->dateTime('acceptation_notification')->nullable();
+            $table->string('camera_ready_paper')->nullable();
             $table->string('logo');
             $table->integer('is_verified')->default(0);
-            $table->integer('is_accept')->default(0);
+            $table->integer('is_accept')->default(2);
             $table->timestamps();
         });
     }

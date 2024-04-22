@@ -20,7 +20,9 @@ class ConferenceController extends Controller
     public function index()
 {
     $conferences = Conference::all()->map(function ($conference) {
-        $conference->logo_url = Storage::url($conference->logo);
+        $conference->observations_media_url = $conference->observations_media ? asset('uploads/observations_media/' . $conference->observations_media) : null;
+        $conference->logo_url = $conference->logo ? asset('uploads/logos/' . $conference->logo) : null;
+        $conference->camera_ready_paper_url = $conference->camera_ready_paper ? asset('uploads/camera_ready_papers/' . $conference->camera_ready_paper) : null;
         return $conference;
     });
     
@@ -28,7 +30,7 @@ class ConferenceController extends Controller
 }
 public function show($id)
     {
-        $conferences =Conferences::find($id);
+        $conferences =Conference::find($id);
 
         if (!$conferences) {
             return response()->json(['message' => 'Conference not found'], 404);
@@ -50,7 +52,7 @@ public function show($id)
             'category' => 'required|string',
             'start_at' => 'required|date',
             'end_at' => 'required|date|after:start_at',
-            'paper_subm_date' => 'required|date|after:start_at',
+            'paper_subm_due_date' => 'required|date|after:start_at',
             'logo' => 'required|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
 
         ]);
@@ -70,10 +72,17 @@ public function show($id)
             'category' => $request->input('category'),
             'start_at' => $request->input('start_at'),
             'end_at' => $request->input('end_at'),
-            'paper_subm_date' => $request->input('paper_subm_date'),
+            'paper_subm_due_date' => $request->input('paper_subm_due_date'),
             'logo' => $request->file('logo')->store('conferences', 'public'),
 
         ]);
+        if ($request->hasFile('logo')) {
+            $file = $request->file('logo');
+            $extension = $file->getClientOriginalExtension();
+            $filename = time() . '.' . $extension;
+            $file->move('uploads/logos/', $filename);
+            $conference->logo = $filename;
+        }
 
         // Assign the chair role to the authenticated user
         $user = Auth::user();
@@ -89,13 +98,61 @@ public function show($id)
         return response()->json(['conference' => $conference,'user role in conference' => $userConference ], 201);
     }
 
+    public function update(Request $request, $id)
+    {
+        // Find the conference
+        $conference = Conference::findOrFail($id);
 
+        // Check if the user is authorized to update the conference
+        // if (!Auth::user()->hasRole('admin') && !$conference->isChair(Auth::user()->id)) {
+           //  return response()->json(['error' => 'Unauthorized action.'], 403);
+        // }
+
+        // Validate the request data
+        $request->validate([
+            'email' => ['email', new AcademicEmail],
+            'title' => 'string',
+            'acronym' => 'string',
+            'city' => 'string',
+            'country' => 'string',
+            'webpage' => 'url',
+            'category' => 'string',
+            'start_at' => 'date',
+            'end_at' => 'date|after:start_at',
+            'logo' => 'image|mimes:jpeg,png,jpg,gif,svg|max:2048',
+            'paper_subm_due_date' => 'date|after:start_at|before:end_at',
+            'register_due_date' => 'date|after:start_at|before:end_at',
+            'acceptation_notification' => 'date|after:start_at|before:end_at',
+            'camera_ready_paper' => 'file|mimes:pdf,doc,docx|max:2048', // Adjust the file types and size as needed
+
+        ]);
+        if ($request->hasFile('logo')) {
+            $file = $request->file('logo');
+            $extension = $file->getClientOriginalExtension();
+            $filename = time() . '.' . $extension;
+            $file->move('uploads/logos/', $filename);
+            $conference->logo = $filename;
+        }
+
+        if ($request->hasFile('camera_ready_paper')) {
+            $file = $request->file('camera_ready_paper');
+            $extension = $file->getClientOriginalExtension();
+            $filename = time() . '.' . $extension;
+            $file->move('uploads/camera_ready_papers/', $filename);
+            $conference->camera_ready_paper = $filename;
+        }
+        $register_due_date = $request->input('register_due_date');
+        $conference->register_due_date = $register_due_date ? $register_due_date : $conference->register_due_date;
+        // Update the conference
+        $conference->update($request->all());
+        return response()->json(['conference' => $conference, 'message' => 'Conference updated successfully'], 200);
+    }
 
 
     public function notAccepted()
     {
         // Retrieve conferences where accept column is 0
-        $conferences = Conference::where('is_accept', 0)->get();
+        $conferences = Conference::where('is_accept', 2)->get();
         #$userConference = $conferences->users()->get();
         
         return response()->json($conferences );
@@ -136,7 +193,7 @@ public function show($id)
         // Check if the user has the role of "admin"
         if ($request->user()->roles->contains('name', 'admin')) {
             // Update the accept column to 1
-            $conference->is_accept = 2;
+            $conference->is_accept = 0;
             $conference->save();
 
             return response()->json(['message' => 'Conference accepted successfully'], 200);
@@ -179,29 +236,6 @@ public function show($id)
 
         // Return success response
         return response()->json(['message' => 'Conference submitted successfully'], 200);
-    }
-    public function update(Request $request, $id)
-    {
-        // Find the conference
-        $conference = Conference::findOrFail($id);
-
-        // Check if the user is authorized to update the conference
-        if (!Auth::user()->hasRole('admin') && !$conference->isChair(Auth::user()->id)) {
-            return response()->json(['error' => 'Unauthorized action.'], 403);
-        }
-
-        // Validate the request data
-        $request->validate([
-            'name' => 'required|string|max:255',
-            'category' => 'required|string|max:255',
-            'start_date' => 'required|date',
-            'end_date' => 'required|date|after_or_equal:start_date',
-        ]);
-
-        // Update the conference
-        $conference->update($request->all());
-
-        return response()->json(['conference' => $conference, 'message' => 'Conference updated successfully'], 200);
     }
 
     public function delete($id)

@@ -39,7 +39,8 @@ Route::get('/verification/verify/{user}', function ($user) {
 });
 Route::middleware(['auth:sanctum'])->group(function () {
     Route::get('users/{id}', [UserController::class,'show']);
-    Route::put('/conferences/{id}', [ConferenceController::class ,'show']);
+    Route::get('/conference/{id}', [ConferenceController::class ,'show']);
+    Route::put('/update/conference/{id}', [ConferenceController::class ,'update']);
     Route::get('/all-conferences', [ConferenceController::class,'index']);
     Route::post('/conferencesrequest', [ConferenceController::class, 'create']);
     Route::get('/conferences/not-accepted',  [ConferenceController::class, 'notAccepted']);
