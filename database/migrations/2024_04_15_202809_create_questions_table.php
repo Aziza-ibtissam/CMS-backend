@@ -13,10 +13,11 @@ return new class extends Migration
     {
         Schema::create('questions', function (Blueprint $table) {
             $table->id();
+            $table->unsignedBigInteger('form_id');
+            $table->foreign('form_id')->references('id')->on('forms')->onDelete('cascade');
             $table->text('description');
-            $table->integer('score');
-            $table->unsignedBigInteger('track_id');
-            $table->foreign('track_id')->references('id')->on('tracks')->onDelete('cascade');
+            $table->integer('point');
+            $table->integer('coefficient');
             $table->timestamps();
         });
     }

@@ -10,12 +10,15 @@ class Topic extends Model
     use HasFactory;
     protected $fillable = [
         'name',
-        'sub_topics',
         'conference_id',
     ];
     public function conference()
     {
         return $this->belongsTo(Conference::class);
+    }
+ public function subtopics()
+    {
+        return $this->hasMany(Subtopic::class);
     }
 
     public function papers()

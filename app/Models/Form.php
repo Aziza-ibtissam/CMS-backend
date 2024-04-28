@@ -9,12 +9,16 @@ class Form extends Model
 {
     use HasFactory;
     protected $fillable = [
-        'equation',
         'conference_id',
     ];
     
     public function conference()
     {
         return $this->belongsTo(Conference::class);
+    }
+
+    public function question()
+    {
+        return $this->hasMany(Question::class);
     }
 }

@@ -11,11 +11,13 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('topics', function (Blueprint $table) {
+        Schema::create('paper_calls', function (Blueprint $table) {
             $table->id();
             $table->unsignedBigInteger('conference_id');
             $table->foreign('conference_id')->references('id')->on('conferences')->onDelete('cascade');
-            $table->string('name');
+            $table->text('body');
+            $table->dateTime('start_at');
+            $table->dateTime('end_at');
             $table->timestamps();
         });
     }
@@ -25,6 +27,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('topics');
+        Schema::dropIfExists('paper_calls');
     }
 };

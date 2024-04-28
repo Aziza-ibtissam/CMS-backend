@@ -24,6 +24,25 @@ class UsersSeeder extends Seeder
 
 
         $superAdmin->assignRole('admin');
+
+        $numberOfUsers = 5;
+
+// Loop to create users
+for ($i = 1; $i <= $numberOfUsers; $i++) {
+    // Create user
+    $user = User::firstOrCreate([
+        'email' => "user{$i}@example.com",
+    ], [
+        'password' => bcrypt('password123'),
+        'firstName' => 'User',
+        'lastName' => " {$i}",
+        'country' => 'Example Country',
+        'affiliation' => 'Example Affiliation',
+    ]);
+
+    // Assign "user" role to the user
+    $user->assignRole('user');
+}
     }
 }
 

@@ -9,6 +9,7 @@ class PaperCall extends Model
 {
     use HasFactory;
     protected $fillable = [
+        'body',
         'start_at',
         'end_at',
         'conference_id',

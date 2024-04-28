@@ -128,4 +128,21 @@ class UserController extends Controller {
 
         return response()->json($user);
     }
+    public function index()
+    {
+        $user = User::all();
+
+        return response()->json($user);
+    }
+    public function searchUser(Request $request)
+{
+    $email = $request->input('email');
+    $user = User::where('email', $email)->first();
+
+    if ($user) {
+        return response()->json($user);
+    } else {
+        return response()->json(['message' => "User with email ".$email." was not found. Enter information below to continue. Account will not be created for the user."], 404);
+    }
+}
 }

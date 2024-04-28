@@ -10,11 +10,12 @@ class Question extends Model
     use HasFactory;
     protected $fillable = [
         'description',
-        'score',
-        'track_id',
+        'point',
+        'coefficient',
+        'form_id',
     ];
-    public function track()
+    public function form()
     {
-        return $this->belongsTo(Track::class);
+        return $this->belongsTo(Form::class);
     }
 }
