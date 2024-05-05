@@ -31,6 +31,12 @@ class UserController extends Controller {
         if ($validator->fails()) {
             return response()->json(['message' => 'Validation failed', 'errors' => $validator->errors()], 400);
         }
+        // Check if email already exists
+    $existingUser = User::where('email', $request->email)->first();
+    if ($existingUser) {
+        return response()->json(['message' => 'Email already exists'], 409);
+    }
+
 
         $user = User::create([
             'firstName' => $request->firstName,

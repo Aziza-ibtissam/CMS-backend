@@ -4,10 +4,9 @@ namespace App\Http\Controllers\API;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Invitations;
-use Illuminate\Support\Facades\Mail;
-use App\Mail\ReviewerInvitation;
 use website\Excel\Facades\Excel;
-use App\Imports\EmailsImport; // Import statement for Excel import class
+use Illuminate\Support\Facades\Notification;
+use App\Notifications\InvitationNotification;
 use App\Models\Conference;
 use App\Models\User;
 
@@ -76,18 +75,18 @@ class ReviewerConferenceController extends Controller
                 'lastName' => $data['lastName'],
                 'affiliation' => $data['affiliation'],
             ]);
+            
             $invitation->save();
 
             // Send email invitation
-            Mail::to($email)->send(new ReviewerInvitation($invitation, $conference, $data['firstName'], $data['lastName']));
-        }
-
+            Notification::route('mail', $email)
+            ->notify(new InvitationNotification($invitation,$conference,$data['firstName'],$data['lastName']));        }
         return response()->json(['message' => 'Invitations sent successfully']);
     }
 
     public function acceptInvitation($id)
     {
-        $invitation = Invitation::findOrFail($id);
+        $invitation = Invitations::findOrFail($id);
         $invitation->invitationStatus = 'accepted';
         $invitation->save();
 
@@ -102,7 +101,7 @@ class ReviewerConferenceController extends Controller
 
     public function declineInvitation($id)
     {
-        $invitation = Invitation::findOrFail($id);
+        $invitation = Invitations::findOrFail($id);
         $invitation->invitationStatus = 'declined';
         $invitation->save();
 
@@ -110,4 +109,19 @@ class ReviewerConferenceController extends Controller
 
         return response()->json(['message' => 'Invitation declined successfully']);
     }
+
+    public function showInvitations($conferenceId)
+{
+    // Fetch invitations for the specified conference ID
+    $invitations = Invitations::where('conference_id', $conferenceId)->get();
+
+    // Check if invitations exist for the specified conference ID
+    if ($invitations->isEmpty()) {
+        // If no invitations found, return a response indicating no invitations exist
+        return response()->json(['message' => 'No invitations found for the specified conference ID'], 404);
+    }
+
+    // Return the invitations as JSON response
+    return response()->json($invitations);
+}
 }

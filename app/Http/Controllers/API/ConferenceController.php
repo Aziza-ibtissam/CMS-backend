@@ -187,10 +187,7 @@ class ConferenceController extends Controller
                 'subtopics' => $subtopics,
             ], 201);
             }  
-            public function topics(Conference $conference)
-            {
-                return $conference->topics;
-            }   
+            
     public function createCallForPaper(Request $request, $conferenceId)
     {
                 // Validate the request data

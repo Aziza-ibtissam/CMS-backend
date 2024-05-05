@@ -9,21 +9,14 @@ class Paper extends Model
 {
     use HasFactory;
     protected $fillable = [
-        'filename',
+        'paperFile',
+        'paperName',
         'submitted_at',
         'status',
-        'paper_call_id',
-        'userID',
+        'emailAuth',
+        'conference_id',
+        'mark'
     ];
-    public function paperCall()
-    {
-        return $this->belongsTo(PaperCall::class,'paper_calls');
-    }
-
-    public function user()
-    {
-        return $this->belongsTo(User::class);
-    }
 
     public function reviews()
     {

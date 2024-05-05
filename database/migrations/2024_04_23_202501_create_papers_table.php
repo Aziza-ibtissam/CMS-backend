@@ -13,11 +13,14 @@ return new class extends Migration
     {
         Schema::create('papers', function (Blueprint $table) {
             $table->id();
-            $table->string('filename');
+            $table->string('paperTitle');
+            $table->string('emailAuth');
             $table->dateTime('submitted_at');
-            $table->string('status');
-            $table->unsignedBigInteger('paper_call_id');
-            $table->foreign('paper_call_id')->references('id')->on('paper_calls');            $table->foreignId('userID')->constrained('users');
+            $table->string('paperfile');
+            $table->enum('status', ['pending', 'accepted', 'declined'])->default('pending');
+            $table->unsignedBigInteger('conference_id');
+            $table->foreign('conference_id')->references('id')->on('conferences'); 
+            $table->decimal('mark')->default(0);
             $table->timestamps();
         });
     }

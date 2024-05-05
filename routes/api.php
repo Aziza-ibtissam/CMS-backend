@@ -8,7 +8,8 @@ use App\Http\Controllers\API\ConferenceController;
 use App\Http\Controllers\API\FormController;
 use App\Http\Controllers\API\ReviewerConferenceController;
 use App\Http\Controllers\API\TopicController;
-
+use App\Http\Controllers\API\PaperCallController;
+use App\Http\Controllers\API\PaperController;
 use Illuminate\Foundation\Auth\EmailVerificationRequest;
  
 
@@ -40,10 +41,16 @@ Route::get('/verification/verify/{user}', function ($user) {
     $user->markEmailAsVerified();
 
     return response()->json(['message' => 'Your email address has been verified.'], 200);
-    Route::put('/invitation/{id}/accept', [ReviewerConferenceController::class,'acceptInvitation']);
 
 
 });
+Route::get('/all-conferences', [ConferenceController::class,'index']);
+Route::put('/invitation/{invitationId}/accept', [ReviewerConferenceController::class,'acceptInvitation']);
+Route::put('/invitation/{id}/decline', [ReviewerConferenceController::class,'declineInvitation'])->name('invitation.decline');
+Route::post('/submit-paper', [PaperController::class,'submitPaper']);
+Route::get('/topics-subtopics/{conference_id}', [TopicController::class, 'getTopicsAndSubtopic']);
+
+
 Route::middleware(['auth:sanctum'])->group(function () {
     Route::get('/users', [UserController::class,'index']);
     Route::get('/users/{id}', [UserController::class,'show']);
@@ -53,20 +60,23 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::get('/conference/{id}', [ConferenceController::class ,'show']);
     Route::post('/update/conference/{id}', [ConferenceController::class ,'update']);
     Route::post('/conference/{id}/topic', [ConferenceController::class ,'ConfereceTopic']);
-    Route::get('/all-conferences', [ConferenceController::class,'index']);
     Route::post('/conferencesrequest', [ConferenceController::class, 'create']);
     Route::get('/conferences/not-accepted',  [ConferenceController::class, 'notAccepted']);
     Route::put('/conferences/{id}/accept', [ConferenceController::class ,'accept']);
     Route::put('/conferences/{id}/reject', [ConferenceController::class ,'reject']);
     Route::get('/user/conferences', [ConferenceController::class,'userConferences']);
-    Route::get('/conference/{conference}/topics', [ConferenceController::class, 'topics']);
     Route::get('/topics/{topic}/subtopics', [TopicController::class, 'index']);
+
+    Route::post('/invite-author', [PaperCallController::class,'sendEmails']);
+
 
     Route::get('/form', [FormController::class,'store']);
 
     Route::post('/inviteReviewers', [ReviewerConferenceController::class,'inviteReviewers']);
-    Route::post('/invitation/{id}/decline', [ReviewerConferenceController::class,'declineInvitation'])->name('invitation.decline');
+    Route::get('/showInvitations/{conferenceId}', [ReviewerConferenceController::class,'showInvitations']);
 
+
+    Route::get('/logout', [UserController::class,'logout']);
 
 
 });

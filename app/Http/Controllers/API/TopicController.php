@@ -10,9 +10,17 @@ use Illuminate\Http\Request;
 
 class TopicController extends Controller
 {
-    public function index(Topic $topic)
-    {
-        $subtopics = Subtopic::where('topic_id', $topic->id)->get();
-        return response()->json($subtopics);
-    }
+    public function getTopicsAndSubtopic(Request $request, $conference_id)
+{
+    // Fetch topics for the specified conference ID
+    $topics = Topic::where('conference_id', $conference_id)->get();
+
+    // Fetch subtopics related to the fetched topics
+    $subtopics = Subtopic::whereIn('topic_id', $topics->pluck('id'))->get();
+
+    return response()->json([
+        'topics' => $topics,
+        'subtopics' => $subtopics
+    ]);
+}
 }
