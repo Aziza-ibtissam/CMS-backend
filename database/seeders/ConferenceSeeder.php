@@ -1,10 +1,11 @@
 <?php
-
 namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
 use App\Models\Conference;
+use App\Models\Form;
 use App\Models\User;
+use App\Models\Question;
 use Faker\Factory as Faker;
 
 class ConferenceSeeder extends Seeder
@@ -18,7 +19,7 @@ class ConferenceSeeder extends Seeder
     {
         $faker = Faker::create();
 
-        // Get existing user IDs
+        // Get all user IDs
         $userIds = User::pluck('id')->toArray();
 
         // Categories and countries data
@@ -39,35 +40,65 @@ class ConferenceSeeder extends Seeder
             "Angola",
         ];
 
-        for ($i = 0; $i < 10; $i++) {
-            // Choose a random user ID from existing users
-            $randomUserId = $faker->randomElement($userIds);
+        // Number of conferences to create
+        $numConferences = 25;
 
-            // Choose random category and country
-            $category = $faker->randomElement($categories);
-            $country = $faker->randomElement($countries);
+for ($i = 0; $i < $numConferences; $i++) {
+    // Choose random category and country
+    $category = $faker->randomElement($categories);
+    $country = $faker->randomElement($countries);
+    $userId = $faker->randomElement($userIds);
 
-            // Create conference
-            $conference = Conference::create([
-                'email' => $faker->email,
-                'userID' => $randomUserId,
-                'title' => $faker->sentence,
-                'acronym' => $faker->word,
-                'city' => $faker->city,
-                'country' => $country,
-                'webpage' => $faker->url,
-                'category' => $category,
-                'start_at' => $faker->dateTimeBetween('now', '+1 year'),
-                'end_at' => $faker->dateTimeBetween('now', '+2 years'),
-                'paper_subm_due_date' => $faker->dateTimeBetween('now', '+1 year'),
-                'logo' => 'conferences/default.jpg', // Default logo path
-            ]);
+    // Create conference
+    $conference = Conference::create([
+        'userID' => $userId,
+        'email' => $faker->email,
+        'title' => $faker->sentence,
+        'acronym' => $faker->word,
+        'city' => $faker->city,
+        'country' => $country,
+        'webpage' => $faker->url,
+        'category' => $category,
+        'start_at' => $faker->dateTimeBetween('now', '+1 year'),
+        'end_at' => $faker->dateTimeBetween('now', '+2 years'),
+        'paper_subm_due_date' => $faker->dateTimeBetween('now', '+1 year'),
+        'logo' => 'conferences/default.jpg', // Default logo path
+    ]);
 
-            // Define role
-            $role = 'chair'; // You can set the role as needed
+    // Assign a user with the role of "chair" to the conference
+    $chairUserId = $faker->randomElement($userIds);
+    $conference->users()->attach($chairUserId, ['role' => 'chair']);
 
-            // Attach user to conference with role
-            $conference->users()->attach($randomUserId, ['role' => $role]);
-        }
+    // Create form for the conference
+    $form = Form::create([
+        'conference_id' => $conference->id,
+        'finalDecisionCoefficient' => $faker->numberBetween(1, 10),
+        'confidentialRemarksCoefficient' => $faker->numberBetween(1, 10),
+        'eligibleCoefficient' => $faker->numberBetween(1, 10),
+    ]);
+
+    // Generate random number of questions for the form
+    $numQuestions = $faker->numberBetween(1, 10); // Adjust as needed
+    for ($j = 0; $j < $numQuestions; $j++) {
+        Question::create([
+            'form_id' => $form->id,
+            'description' => $faker->sentence,
+            'coefficient' => $faker->numberBetween(1, 10),
+            'point' => $faker->numberBetween(1, 10),
+        ]);
+    }
+
+    // Shuffle user IDs array to randomize reviewer assignment
+    shuffle($userIds);
+
+    // Select random reviewers (up to 10% of total users) for this conference
+    $numReviewers = max(1, count($userIds) / 10); // Ensure at least one reviewer
+    $reviewerIds = array_slice($userIds, 0, $numReviewers);
+
+    // Assign reviewers to the conference
+    foreach ($reviewerIds as $reviewerId) {
+        $conference->users()->attach($reviewerId, ['role' => 'reviewer']);
+    }
+}
     }
 }

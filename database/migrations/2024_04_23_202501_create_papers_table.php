@@ -13,14 +13,20 @@ return new class extends Migration
     {
         Schema::create('papers', function (Blueprint $table) {
             $table->id();
-            $table->string('paperTitle');
-            $table->string('emailAuth');
-            $table->dateTime('submitted_at');
-            $table->string('paperfile');
-            $table->enum('status', ['pending', 'accepted', 'declined'])->default('pending');
+            $table->string('custom_id')->unique();
             $table->unsignedBigInteger('conference_id');
             $table->foreign('conference_id')->references('id')->on('conferences'); 
+            $table->unsignedBigInteger('user_id'); // Add this line
+            $table->foreign('user_id')->references('id')->on('users');
+            $table->string('paperTitle');
+            $table->string('paperFile');
+            $table->json('authors');
+            $table->text('abstract');
+            $table->string('keywords');
+            $table->dateTime('submitted_at');
+            $table->enum('status', ['pending', 'accepted', 'declined'])->default('pending');
             $table->decimal('mark')->default(0);
+            $table->string('finalVersionFile')>nullable();
             $table->timestamps();
         });
     }

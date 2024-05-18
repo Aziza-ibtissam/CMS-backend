@@ -11,29 +11,16 @@ class FormController extends Controller
 {
     public function store(Request $request)
     {
-        // Validate form data
-        $validatedData = $request->validate([
+        $validated = $request->validate([
             'conference_id' => 'required|exists:conferences,id',
-            'questions.*.description' => 'required|string',
-            'questions.*.point' => 'required|integer',
-            'questions.*.coefficient' => 'required|integer',
+            'finalDecisionCoefficient' => 'required|integer',
+            'confidentialRemarksCoefficient' => 'required|integer',
+            'eligibleCoefficient' => 'required|integer',
         ]);
 
-        // Create a new form
-        $form = Form::create([
-            'conference_id' => $validatedData['conference_id'],
-        ]);
+        // Create a new form record
+        $form = Form::create($validated);
 
-        // Create questions for the form
-        foreach ($validatedData['questions'] as $questionData) {
-            Question::create([
-                'form_id' => $form->id,
-                'description' => $questionData['description'],
-                'point' => $questionData['point'],
-                'coefficient' => $questionData['coefficient'],
-            ]);
-        }
-
-        return response()->json(['message' => 'Form submitted successfully']);
+        return response()->json(['message' => 'Form Created Successfully']);
     }
 }

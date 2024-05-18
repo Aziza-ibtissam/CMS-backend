@@ -17,6 +17,7 @@ return new class extends Migration
             $table->foreign('form_id')->references('id')->on('forms')->onDelete('cascade');
             $table->text('description');
             $table->integer('coefficient');
+            $table->integer('point');
             $table->timestamps();
         });
     }

@@ -63,7 +63,8 @@ class User extends Authenticatable implements MustVerifyEmail
 
     public function papers()
     {
-        return $this->hasMany(Paper::class);
+        return $this->belongsToMany(Paper::class, 'assign_paper')
+            ->withPivot(['answers', 'finalDecision', 'isEligible', 'comments', 'confidentialRemarks']);
     }
 
     public function reviews()

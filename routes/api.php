@@ -47,7 +47,6 @@ Route::get('/verification/verify/{user}', function ($user) {
 Route::get('/all-conferences', [ConferenceController::class,'index']);
 Route::put('/invitation/{invitationId}/accept', [ReviewerConferenceController::class,'acceptInvitation']);
 Route::put('/invitation/{id}/decline', [ReviewerConferenceController::class,'declineInvitation'])->name('invitation.decline');
-Route::post('/submit-paper', [PaperController::class,'submitPaper']);
 Route::get('/topics-subtopics/{conference_id}', [TopicController::class, 'getTopicsAndSubtopic']);
 
 
@@ -64,6 +63,9 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::get('/conferences/not-accepted',  [ConferenceController::class, 'notAccepted']);
     Route::put('/conferences/{id}/accept', [ConferenceController::class ,'accept']);
     Route::put('/conferences/{id}/reject', [ConferenceController::class ,'reject']);
+    Route::post('/conference/{id}/acceptationsSetting', [ConferenceController::class, 'acceptationsSetting']);
+    Route::get('/conference/{id}/acceptanceInfo',[ConferenceController::class, 'getAcceptanceInfo']);
+
     Route::get('/user/conferences', [ConferenceController::class,'userConferences']);
     Route::get('/topics/{topic}/subtopics', [TopicController::class, 'index']);
 
@@ -74,6 +76,10 @@ Route::middleware(['auth:sanctum'])->group(function () {
 
     Route::post('/inviteReviewers', [ReviewerConferenceController::class,'inviteReviewers']);
     Route::get('/showInvitations/{conferenceId}', [ReviewerConferenceController::class,'showInvitations']);
+    Route::post('/submit-paper', [PaperController::class,'submitPaper']);
+    Route::get('/papers/{paperId}/average-score', [PaperController::class, 'calculateAverageScore']);
+    Route::get('/papersAuthor/{conferenceId}/{userId}', [PaperController::class, 'getPaperForAuthor']);
+    Route::get('/paper/uploadFinalVersion/{paperId}', [PaperController::class, 'getPaperForAuthor']);
 
 
     Route::get('/logout', [UserController::class,'logout']);

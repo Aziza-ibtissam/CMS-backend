@@ -85,15 +85,27 @@ class ReviewerConferenceController extends Controller
     }
 
     public function acceptInvitation($id)
-    {
-        $invitation = Invitations::findOrFail($id);
-        $invitation->invitationStatus = 'accepted';
-        $invitation->save();
+{
+    $invitation = Invitations::findOrFail($id);
+    $invitation->invitationStatus = 'accepted';
+    $invitation->save();
 
+    // Search for user by email
+    $user = User::where('email', $invitation->email)->first();
+
+    if ($user) {
+        // Update user's role to 'reviewer' for the corresponding conference
+        $conference = Conference::findOrFail($invitation->conference_id); // Assuming there's a conference_id field in the invitations table
+        $user->conferences()->updateExistingPivot($conference->id, ['role' => 'reviewer']);
+        
         // You can add additional logic here, like redirecting the user or sending a confirmation email
-
-        return response()->json(['message' => 'Invitation declined successfully']);
+        
+        return response()->json(['message' => 'Invitation accepted successfully']);
+    } else {
+        // Handle case where user with provided email is not found
+        return response()->json(['error' => 'User with provided email not found'], 404);
     }
+}
     public function show()
     {
         return view('accept_invitation');

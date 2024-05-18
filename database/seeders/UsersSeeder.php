@@ -25,7 +25,7 @@ class UsersSeeder extends Seeder
 
         $superAdmin->assignRole('admin');
 
-        $numberOfUsers = 5;
+        $numberOfUsers = 100;
 
 // Loop to create users
 for ($i = 1; $i <= $numberOfUsers; $i++) {
@@ -43,6 +43,9 @@ for ($i = 1; $i <= $numberOfUsers; $i++) {
     // Assign "user" role to the user
     $user->assignRole('user');
 }
-    }
+    
+
+    
 }
 
+}

@@ -13,14 +13,10 @@ return new class extends Migration
     {
         Schema::create('assign_paper', function (Blueprint $table) {
             $table->id();
-            $table->unsignedBigInteger('conference_id');
-            $table->foreign('conference_id')->references('id')->on('conferences')->onDelete('cascade');
-            $table->unsignedBigInteger('paper_id');
-            $table->foreign('paper_id')->references('id')->on('papers')->onDelete('cascade');
-            $table->unsignedBigInteger('userId');
-            $table->foreign('userId')->references('id')->on('users')->onDelete('cascade');
+            $table->foreignId('paper_id')->constrained()->onDelete('cascade');
+            $table->foreignId('user_id')->constrained()->onDelete('cascade');
             $table->json('answers');
-            $table->integer('finalDecision');
+            $table->integer('finalDecision')->nullable();
             $table->enum('isEligible', ['yes', 'no'])->default('no');
             $table->text('comments');
             $table->text('confidentialRemarks')->nullable();

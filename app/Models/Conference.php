@@ -30,9 +30,11 @@ class Conference extends Model
         return $this->belongsToMany(User::class)->withPivot('role');
     }
         
-    public function paper()
+    
+
+    public function papers()
     {
-        return $this->belongsTo(Paper::class);
+        return $this->hasMany(Paper::class);
     }
 
     public function paperCalls()
@@ -51,7 +53,11 @@ class Conference extends Model
     {
         return $this->hasOne(Form::class,);
     }
-
+    public function acceptanceSettings()
+    {
+        return $this->hasOne(AcceptanceSetting::class);
+    }
+    
     public function sessions()
     {
         return $this->hasMany(Session::class);

@@ -9,8 +9,10 @@ use App\Models\Topic;
 use App\Models\Subtopic;
 use App\Models\PaperCall;
 use App\Models\Role;
+use App\Models\AcceptationsSetting;
 use App\Rules\AcademicEmail;
 use App\Models\UserRoleInConference;
+use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\Rule;
 use App\Mail\ConferenceCreatedMail;
@@ -306,48 +308,60 @@ class ConferenceController extends Controller
         
         return response()->json($conferences);
     }
+    
+    public function acceptationsSetting($id, Request $request)
+{
+    // Validate the input
+    $validated = $request->validate([
+        'oralPresentations' => 'required|integer|min:0',
+        'poster' => 'required|integer|min:0',
+        'waitingList' => 'required|integer|min:0',
+    ]);
 
+    // Check if counts have already been submitted for this conference
+    $existingSetting = AcceptationsSetting::where('conference_id', $id)->first();
 
-    public function submit(Request $request)
-    {
-        // Validate the request data
-        $request->validate([
-            'conference_id' => 'required|exists:conferences,id',
-        ]);
-
-        // Get the authenticated user
-        $user = $request->user();
-
-        // Get the conference
-        $conference = Conference::findOrFail($request->input('conference_id'));
-
-        // Assign the reviewer role to the authenticated user
-        $reviewerRole = Role::where('name', 'reviewer')->firstOrCreate(['name' => 'reviewer']);
-        UserRoleInConference::create([
-            'user_id' => $user->id,
-            'role_id' => $reviewerRole->id,
-            'conference_id' => $conference->id,
-        ]);
-
-        // Return success response
-        return response()->json(['message' => 'Conference submitted successfully'], 200);
-    }
-
-    public function delete($id)
-    {
-        // Find the conference
+    if ($existingSetting) {
+        // Retrieve the conference associated with the acceptance setting
         $conference = Conference::findOrFail($id);
 
-        // Check if the user is authorized to delete the conference
-        if (!Auth::user()->hasRole('admin') && !$conference->isChair(Auth::user()->id)) {
-            return response()->json(['error' => 'Unauthorized action.'], 403);
+        // Check if the conference has ended
+        $conferenceEndDate = Carbon::parse($conference->end_at);
+        $currentDate = Carbon::now();
+        if ($currentDate->gte($conferenceEndDate)) {
+            return response()->json(['message' => 'The conference has ended. You can no longer edit the acceptance counts.'], 403);
         }
 
-        // Delete the conference
-        $conference->delete();
+        // Update the existing acceptance setting with the new data
+        $existingSetting->oral_presentations = $validated['oralPresentations'];
+        $existingSetting->poster = $validated['poster'];
+        $existingSetting->waiting_list = $validated['waitingList'];
+        $existingSetting->save();
 
-        return response()->json(['message' => 'Conference deleted successfully'], 200);
+        return response()->json(['message' => 'Acceptance counts updated successfully.'], 200);
+    } else {
+        // Save the counts to the database as a new record
+        $setting = new AcceptationsSetting();
+        $setting->conference_id = $id;
+        $setting->oral_presentations = $validated['oralPresentations'];
+        $setting->poster = $validated['poster'];
+        $setting->waiting_list = $validated['waitingList'];
+        $setting->save();
+
+        return response()->json(['message' => 'Counts submitted successfully.'], 200);
     }
+}
 
+    public function getAcceptanceInfo($conferenceId)
+    {
+        // Assuming AcceptationsSetting is the model representing acceptance information
+        $acceptanceInfo = AcceptationsSetting::where('conference_id', $conferenceId)->first();
+
+        if ($acceptanceInfo) {
+            return response()->json($acceptanceInfo);
+        } else {
+            return response()->json(['message' => 'Acceptance information not found for the conference.'], 404);
+        }
+    }
 
 }

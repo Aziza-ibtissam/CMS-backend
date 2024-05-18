@@ -4,6 +4,7 @@ namespace App\Http\Controllers\API\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Models\Invitation;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
@@ -25,19 +26,21 @@ class UserController extends Controller {
             'password' => 'required|string|min:8', 
             'country' => 'required|string',
             'affiliation' => 'required|string',
-
         ]);
-
+    
         if ($validator->fails()) {
             return response()->json(['message' => 'Validation failed', 'errors' => $validator->errors()], 400);
         }
-        // Check if email already exists
-    $existingUser = User::where('email', $request->email)->first();
-    if ($existingUser) {
-        return response()->json(['message' => 'Email already exists'], 409);
-    }
-
-
+    
+        // Check if email already exists in invitations table
+        $invitation = Invitation::where('email', $request->email)->first();
+    
+        if ($invitation) {
+            $role = 'reviewer';
+        } else {
+            $role = 'user';
+        }
+    
         $user = User::create([
             'firstName' => $request->firstName,
             'lastName' => $request->lastName,
@@ -46,13 +49,15 @@ class UserController extends Controller {
             'country' => $request->country,
             'affiliation' => $request->affiliation,
         ]);
+    
         $user->save();
-        $user->assignRole('user');
+        $user->assignRole($role);
         $token = $user->createToken('auth_token')->plainTextToken;
         $user->sendEmailVerificationNotification();
-       
+    
         return response()->json(['message' =>'User registered successfully. Please check your email to verify your account.', 'token' => $token, 'user' => $user], 200);
     }
+    
 
     public function login(Request $request)
     {

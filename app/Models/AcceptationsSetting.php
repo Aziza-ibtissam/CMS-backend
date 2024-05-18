@@ -5,23 +5,20 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class Form extends Model
-{
+class AcceptationsSetting extends Model
+{ 
     use HasFactory;
+    protected $table = 'acceptations_setting'; // Ensure table name matches migration
+
     protected $fillable = [
         'conference_id',
-        'finalDecisionCoefficient',
-        'confidentialRemarksCoefficient',
-        'eligibleCoefficient'
+        'oral_presentations',
+        'poster',
+        'waiting_list',
     ];
-    
+
     public function conference()
     {
         return $this->belongsTo(Conference::class);
-    }
-
-    public function question()
-    {
-        return $this->hasMany(Question::class);
     }
 }

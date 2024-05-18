@@ -11,13 +11,13 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('forms', function (Blueprint $table) {
+        Schema::create('acceptations_setting', function (Blueprint $table) {
             $table->id();
             $table->unsignedBigInteger('conference_id');
             $table->foreign('conference_id')->references('id')->on('conferences')->onDelete('cascade');
-            $table->integer('finalDecisionCoefficient');
-            $table->integer('confidentialRemarksCoefficient');
-            $table->integer('eligibleCoefficient');
+            $table->integer('oral_presentations');
+            $table->integer('poster');
+            $table->integer('waiting_list');
             $table->timestamps();
         });
     }
@@ -27,6 +27,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('forms');
+        Schema::dropIfExists('acceptations_setting');
     }
 };
