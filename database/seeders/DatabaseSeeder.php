@@ -16,6 +16,7 @@ class DatabaseSeeder extends Seeder
         $this->call(TopicSeeder::class);
         $this->call(SubtopicSeeder::class);
         $this->call(PaperSeeder::class);
+        $this->call(InvitationsSeeder::class);
         $this->call(AssignPaperSeeder::class);
 
 

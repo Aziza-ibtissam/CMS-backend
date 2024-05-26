@@ -22,7 +22,7 @@ class PaperSeeder extends Seeder
 
         foreach ($conferences as $conference) {
             // Create papers for each conference
-            for ($i = 0; $i < 10; $i++) { // Assuming you want to create 10 papers for each conference
+            for ($i = 0; $i < 5; $i++) { // Assuming you want to create 10 papers for each conference
                 $paper = new Paper();
                 $paper->conference_id = $conference->id;
                 
@@ -38,10 +38,7 @@ class PaperSeeder extends Seeder
                 $paper->mark = 0; // Default mark
 
                 // New fields
-                $paper->authors = json_encode([
-                    ['first_name' => 'Author', 'last_name' => 'One', 'email' => 'author1@example.com'],
-                    ['first_name' => 'Author', 'last_name' => 'Two', 'email' => 'author2@example.com']
-                ]); // Example authors with first and last names
+                $paper->authors = json_encode(["Author1", "Author2"]); // Example authors with first and last names
                 $paper->abstract = 'This is the abstract of Paper ' . ($i + 1); // Example abstract
                 $paper->keywords = 'keyword' . ($i + 1); // Example keyword
 

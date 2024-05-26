@@ -11,7 +11,26 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Http\Request;
 
 class PaperController extends Controller
-{
+
+{   public function getPapersByConference($conferenceId)
+    {    
+
+        $papers = Paper::select('papers.*', 'conferences.review_due_date')
+        ->where('papers.conference_id', $conferenceId)
+        ->join('conferences', 'papers.conference_id', '=', 'conferences.id')
+        ->get();
+
+        
+        return response()->json( ['papers'=>$papers]);
+    }
+    
+    public function show($paperId)
+    {
+        // Retrieve the paper details by ID
+        $paper = Paper::findOrFail($paperId);
+
+        return response()->json($paper);
+    }
     public function submitPaper(Request $request)
     {
         // Decode authors JSON
@@ -35,18 +54,16 @@ class PaperController extends Controller
                   ->orWhere('authors', json_encode($authorsArray));
         })
         ->first();
-    if ($existingPaper) {
-        return response()->json(['message' => 'This paper has already been submitted to this conference'], 409);
-    }
-    $user = User::where('email', $request->input('email'))->first();
-    if (!$user) {
-        return response()->json(['message' => 'User not found'], 404);
-    }
+        if ($existingPaper) {
+            return response()->json(['message' => 'This paper has already been submitted to this conference'], 409);
+        }
+        $user = User::where('email', $request->input('email'))->first();
+        if (!$user) {
+           return response()->json(['message' => 'User not found'], 404);
+        }
     
-        // Format the submitted_at value
         $submittedAt = date('Y-m-d H:i:s', strtotime($request->input('submitted_at')));
     
-        // Handle file upload
         if ($request->hasFile('paperFile')) {
             $paperFile = $request->file('paperFile')->store('papers');
         }
@@ -72,7 +89,7 @@ class PaperController extends Controller
     }
     
     public function calculateAverageScore($paperId)
-{
+    {
     // Retrieve the paper object
     $paper = Paper::findOrFail($paperId);
 
@@ -136,16 +153,17 @@ class PaperController extends Controller
 
     // Calculate total average
     $totalAverage = $totalCoefficient > 0 ? $totalWeightedSum / $totalCoefficient : 0;
-
+    $paper->mark = $totalAverage;
+    $paper->save();
     // Return the total average
     return  ['totalAverage' => $totalAverage, ];
-}
-
-public function getPaperForAuthor($conferenceId, $userId)
+    }
+    
+     public function getPaperForAuthor($conferenceId, $userId)
     {
         $paper = Paper::where('conference_id', $conferenceId)
                       ->where('user_id', $userId)
-                      ->first();
+                      ->get();
 
         if (!$paper) {
             return response()->json(['message' => 'Paper not found'], 404);
@@ -157,6 +175,16 @@ public function getPaperForAuthor($conferenceId, $userId)
             'paper' => $paper,
             'conference' => $conference
         ]);
+    }
+    public function download($paperId)
+    {
+        $paper = Paper::findOrFail($paperId);
+
+        // Assuming the paper file is stored in the storage/app/public directory
+        $filePath = 'public/' . $paper->paperFile;
+        
+        // Return the file as a downloadable response
+        return Storage::download($filePath);
     }
 
     public function uploadFinalVersion(Request $request, $paperId)

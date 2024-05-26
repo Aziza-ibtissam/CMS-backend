@@ -19,6 +19,7 @@ class Conference extends Model
         'start_at',
         'end_at',
         'paper_subm_due_date',
+        'review_due_date',
         'logo',
         'userID',
        'register_due_date',
@@ -58,12 +59,6 @@ class Conference extends Model
         return $this->hasOne(AcceptanceSetting::class);
     }
     
-    public function sessions()
-    {
-        return $this->hasMany(Session::class);
-    }
-    public function tracks()
-    {
-        return $this->hasMany(Track::class);
-    }
+   
+    
 }

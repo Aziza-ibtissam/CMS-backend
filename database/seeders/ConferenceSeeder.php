@@ -61,14 +61,15 @@ for ($i = 0; $i < $numConferences; $i++) {
         'category' => $category,
         'start_at' => $faker->dateTimeBetween('now', '+1 year'),
         'end_at' => $faker->dateTimeBetween('now', '+2 years'),
+        'review_due_date' => $faker->dateTimeBetween('now', '+2 years'),
         'paper_subm_due_date' => $faker->dateTimeBetween('now', '+1 year'),
-        'logo' => 'conferences/default.jpg', // Default logo path
+        'logo' => 'uploads/logos/1713749576.jpg', // Default logo path
     ]);
 
     // Assign a user with the role of "chair" to the conference
     $chairUserId = $faker->randomElement($userIds);
     $conference->users()->attach($chairUserId, ['role' => 'chair']);
-
+   /*
     // Create form for the conference
     $form = Form::create([
         'conference_id' => $conference->id,
@@ -87,6 +88,7 @@ for ($i = 0; $i < $numConferences; $i++) {
             'point' => $faker->numberBetween(1, 10),
         ]);
     }
+    */
 
     // Shuffle user IDs array to randomize reviewer assignment
     shuffle($userIds);

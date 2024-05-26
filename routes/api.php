@@ -9,7 +9,8 @@ use App\Http\Controllers\API\FormController;
 use App\Http\Controllers\API\ReviewerConferenceController;
 use App\Http\Controllers\API\TopicController;
 use App\Http\Controllers\API\PaperCallController;
-use App\Http\Controllers\API\PaperController;
+use App\Http\Controllers\API\PaperController; 
+use App\Http\Controllers\API\AssignPaperController;
 use Illuminate\Foundation\Auth\EmailVerificationRequest;
  
 
@@ -72,15 +73,23 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::post('/invite-author', [PaperCallController::class,'sendEmails']);
 
 
-    Route::get('/form', [FormController::class,'store']);
 
     Route::post('/inviteReviewers', [ReviewerConferenceController::class,'inviteReviewers']);
     Route::get('/showInvitations/{conferenceId}', [ReviewerConferenceController::class,'showInvitations']);
     Route::post('/submit-paper', [PaperController::class,'submitPaper']);
+    Route::get('/paper-details/{paperId}', [PaperController::class, 'show']);
     Route::get('/papers/{paperId}/average-score', [PaperController::class, 'calculateAverageScore']);
     Route::get('/papersAuthor/{conferenceId}/{userId}', [PaperController::class, 'getPaperForAuthor']);
     Route::get('/paper/uploadFinalVersion/{paperId}', [PaperController::class, 'getPaperForAuthor']);
+    Route::get('/auto-assign/{conferenceId}', [AssignPaperController::class, 'autoAssign']);
+    Route::get('/reviewer/assignedPapers/{conferenceId}', [AssignPaperController::class, 'getAssignedPapers']);
 
+    Route::get('/reviewers/{conferenceId}', [AssignPaperController::class, 'getReviewers']);
+    Route::get('/papers/{conferenceId}', [PaperController::class, 'getPapersByConference']);
+    Route::get('/papers/{paperId}/download', [PaperController::class, 'download']);
+    Route::post('/saveForm',[FormController::class,'saveForm']);
+    Route::get('/getFormForReview/{conferenceId}',[FormController::class,'getFormForReview']);
+    Route::post('/storeEvaluation/{paperId}',[AssignPaperController::class,'storeEvaluation']);
 
     Route::get('/logout', [UserController::class,'logout']);
 

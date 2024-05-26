@@ -4,6 +4,7 @@ namespace Database\Seeders;
 use Illuminate\Database\Seeder;
 use App\Models\Subtopic; // Update the namespace as per your application
 use App\Models\Topic;
+
 class SubtopicSeeder extends Seeder
 {
     /**

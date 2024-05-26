@@ -26,6 +26,7 @@ return new class extends Migration
             $table->dateTime('paper_subm_due_date');
             $table->dateTime('register_due_date')->default('2024-01-01');
             $table->dateTime('acceptation_notification')->default('2024-01-01');
+            $table->dateTime('review_due_date')->default('2024-01-01');
             $table->string('camera_ready_paper')->default('camera_ready_paper');
             $table->string('logo');
             $table->integer('is_verified')->default(0);

@@ -16,7 +16,7 @@ return new class extends Migration
             $table->string('custom_id')->unique();
             $table->unsignedBigInteger('conference_id');
             $table->foreign('conference_id')->references('id')->on('conferences'); 
-            $table->unsignedBigInteger('user_id'); // Add this line
+            $table->unsignedBigInteger('user_id'); 
             $table->foreign('user_id')->references('id')->on('users');
             $table->string('paperTitle');
             $table->string('paperFile');
@@ -26,7 +26,7 @@ return new class extends Migration
             $table->dateTime('submitted_at');
             $table->enum('status', ['pending', 'accepted', 'declined'])->default('pending');
             $table->decimal('mark')->default(0);
-            $table->string('finalVersionFile')>nullable();
+            $table->string('finalVersionFile')->nullable();
             $table->timestamps();
         });
     }

@@ -15,10 +15,10 @@ return new class extends Migration
             $table->id();
             $table->foreignId('paper_id')->constrained()->onDelete('cascade');
             $table->foreignId('user_id')->constrained()->onDelete('cascade');
-            $table->json('answers');
+            $table->json('answers')->nullable();
             $table->integer('finalDecision')->nullable();
             $table->enum('isEligible', ['yes', 'no'])->default('no');
-            $table->text('comments');
+            $table->text('comments')->nullable();
             $table->text('confidentialRemarks')->nullable();
             $table->timestamps();
         });

@@ -20,7 +20,7 @@ class Form extends Model
         return $this->belongsTo(Conference::class);
     }
 
-    public function question()
+    public function questions()
     {
         return $this->hasMany(Question::class);
     }

@@ -25,11 +25,10 @@ class ConferenceController extends Controller
     public function index()
    {
     $conferences = Conference::all()->map(function ($conference) {
-        $conference->observations_media_url = $conference->observations_media ? asset('uploads/observations_media/' . $conference->observations_media) : null;
-        $conference->logo_url = $conference->logo ? asset('uploads/logos/' . $conference->logo) : null;
-        $conference->camera_ready_paper_url = $conference->camera_ready_paper ? asset('uploads/camera_ready_papers/' . $conference->camera_ready_paper) : null;
+        // Assuming 'logo' is the attribute storing the logo file name
         return $conference;
     });
+
     
     return response()->json($conferences);
       }
@@ -125,8 +124,9 @@ class ConferenceController extends Controller
             'end_at' => 'date|after:start_at',
             'logo' => 'image|mimes:jpeg,png,jpg,gif,svg|max:2048',
             'paper_subm_due_date' => 'date|after:start_at|before:end_at',
-            'register_due_date' => 'date|after:start_at',
-            'acceptation_notification' => 'date|after:start_at',
+            'review_due_date' => 'date|after:start_at|before:end_at',
+            'register_due_date' => 'date|after:start_at|before:end_at',
+            'acceptation_notification' => 'date|after:start_at|before:end_at',
             'camera_ready_paper' => 'file|mimes:pdf,doc,docx|max:2048', // Adjust the file types and size as needed
 
         ]);
@@ -248,12 +248,18 @@ class ConferenceController extends Controller
 
     public function notAccepted()
     {
-        // Retrieve conferences where accept column is 0
+        // Retrieve conferences where is_accept column is 2 (assuming 2 means not accepted)
         $conferences = Conference::where('is_accept', 2)->get();
-        #$userConference = $conferences->users()->get();
-        
-        return response()->json($conferences );
-    }
+    // Append logo URL to each conference object
+    $conferences->transform(function ($conference) {
+        // Assuming you have a column named 'logo' in the conferences table
+        $conference->logo_url = asset("uploads/logos/{$conference->logo}");
+        return $conference;
+    });
+
+    // Return JSON response with conferences including logo URLs
+    return response()->json($conferences);
+}
 
 
 

@@ -84,10 +84,11 @@ class ReviewerConferenceController extends Controller
         return response()->json(['message' => 'Invitations sent successfully']);
     }
 
-    public function acceptInvitation($id)
+    public function acceptInvitation(Request $request ,$id)
 {
     $invitation = Invitations::findOrFail($id);
     $invitation->invitationStatus = 'accepted';
+    $invitation->reviewerTopic = $request->input('expertise');
     $invitation->save();
 
     // Search for user by email
@@ -100,7 +101,7 @@ class ReviewerConferenceController extends Controller
         
         // You can add additional logic here, like redirecting the user or sending a confirmation email
         
-        return response()->json(['message' => 'Invitation accepted successfully']);
+        return response()->json(['success' => true,'message' => 'Invitation accepted successfully'],200);
     } else {
         // Handle case where user with provided email is not found
         return response()->json(['error' => 'User with provided email not found'], 404);
@@ -123,17 +124,17 @@ class ReviewerConferenceController extends Controller
     }
 
     public function showInvitations($conferenceId)
-{
-    // Fetch invitations for the specified conference ID
-    $invitations = Invitations::where('conference_id', $conferenceId)->get();
+    {
+        // Fetch invitations for the specified conference ID
+        $invitations = Invitations::where('conference_id', $conferenceId)->get();
 
-    // Check if invitations exist for the specified conference ID
-    if ($invitations->isEmpty()) {
-        // If no invitations found, return a response indicating no invitations exist
-        return response()->json(['message' => 'No invitations found for the specified conference ID'], 404);
+        // Check if invitations exist for the specified conference ID
+        if ($invitations->isEmpty()) {
+            // If no invitations found, return a response indicating no invitations exist
+            return response()->json(['message' => 'No invitations found for the specified conference ID'], 404);
+        }
+
+        // Return the invitations as JSON response
+        return response()->json($invitations);
     }
-
-    // Return the invitations as JSON response
-    return response()->json($invitations);
-}
 }

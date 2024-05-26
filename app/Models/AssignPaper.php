@@ -8,9 +8,10 @@ use Illuminate\Database\Eloquent\Model;
 class AssignPaper extends Model
 {
     use HasFactory;
+    protected $table = 'assign_paper';
+
     protected $fillable = [
-    'userId',
-            'conference_id',
+    'user_id',
             'paper_id',
             'answers',
             'finalDecision',

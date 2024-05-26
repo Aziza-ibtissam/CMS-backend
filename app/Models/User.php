@@ -67,15 +67,9 @@ class User extends Authenticatable implements MustVerifyEmail
             ->withPivot(['answers', 'finalDecision', 'isEligible', 'comments', 'confidentialRemarks']);
     }
 
-    public function reviews()
-    {
-        return $this->hasMany(Review::class);
-    }
+    
 
-    public function sessions()
-    {
-        return $this->hasMany(Session::class);
-    }
+    
 
 
 }

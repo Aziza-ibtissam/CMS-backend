@@ -20,6 +20,7 @@ return new class extends Migration
             $table->string('lastName');
             $table->string('affiliation');
             $table->enum('invitationStatus', ['pending', 'accepted', 'declined'])->default('pending');
+            $table->string('reviewerTopic');
             $table->timestamps();
         });
         

@@ -15,9 +15,9 @@ return new class extends Migration
             $table->id();
             $table->unsignedBigInteger('conference_id');
             $table->foreign('conference_id')->references('id')->on('conferences')->onDelete('cascade');
-            $table->integer('finalDecisionCoefficient');
-            $table->integer('confidentialRemarksCoefficient');
-            $table->integer('eligibleCoefficient');
+            $table->integer('finalDecisionCoefficient')->nullable();
+            $table->integer('confidentialRemarksCoefficient')->nullable();
+            $table->integer('eligibleCoefficient')->nullable();
             $table->timestamps();
         });
     }

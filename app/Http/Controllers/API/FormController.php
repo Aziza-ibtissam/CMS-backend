@@ -9,18 +9,45 @@ use App\Models\Question;
 
 class FormController extends Controller
 {
-    public function store(Request $request)
+    public function saveForm(Request $request)
     {
-        $validated = $request->validate([
-            'conference_id' => 'required|exists:conferences,id',
-            'finalDecisionCoefficient' => 'required|integer',
-            'confidentialRemarksCoefficient' => 'required|integer',
-            'eligibleCoefficient' => 'required|integer',
+        $request->validate([
+            'conference_id' => 'required|integer',
+            'finalDecisionCoefficient' => 'nullable|integer',
+            'confidentialRemarksCoefficient' => 'nullable|integer',
+            'eligibleCoefficient' => 'nullable|integer',
+            'questions' => 'required|array',
+            'questions.*.description' => 'required|string',
+            'questions.*.point' => 'required|integer',
         ]);
 
-        // Create a new form record
-        $form = Form::create($validated);
+        // Update or create the form based on the conference_id
+        $form = Form::updateOrCreate(
+            ['conference_id' => $request->conference_id],
+            [
+                'finalDecisionCoefficient' => $request->finalDecisionCoefficient,
+                'confidentialRemarksCoefficient' => $request->confidentialRemarksCoefficient,
+                'eligibleCoefficient' => $request->eligibleCoefficient,
+            ]
+        );
 
-        return response()->json(['message' => 'Form Created Successfully']);
+        // Sync the questions with the form
+        $form->questions()->delete(); // Delete existing questions
+        foreach ($request->questions as $questionData) {
+            $form->questions()->create($questionData);
+        }
+
+        return response()->json(['message' => 'Form and questions saved successfully.']);
+    }
+
+    public function getFormForReview($conferenceId)
+    {
+        
+        // Retrieve form data based on the conference ID
+        $formData = Form::with('questions')->where('conference_id', $conferenceId)->firstOrFail();
+
+        // Return the form data
+        return response()->json(['formData' => $formData], 200);
+       
     }
 }

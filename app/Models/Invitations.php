@@ -15,5 +15,6 @@ class Invitations extends Model
         'lastName',
         'affiliation',
         'invitationStatus',
+        'reviewerTopic'
     ];
 }
