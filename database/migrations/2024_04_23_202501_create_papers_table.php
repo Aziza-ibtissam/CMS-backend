@@ -24,8 +24,8 @@ return new class extends Migration
             $table->text('abstract');
             $table->string('keywords');
             $table->dateTime('submitted_at');
-            $table->enum('status', ['pending', 'accepted', 'declined'])->default('pending');
             $table->decimal('mark')->default(0);
+            $table->enum('acceptations_setting', ['pending','Oral_presentations', 'Poster', 'Waiting_list','Rejected'])->default('pending');
             $table->string('finalVersionFile')->nullable();
             $table->timestamps();
         });

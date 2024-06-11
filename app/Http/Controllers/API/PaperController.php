@@ -5,7 +5,17 @@ use App\Http\Controllers\Controller;
 use App\Models\Paper;
 use App\Models\Conference;
 use App\Models\User;
+use App\Models\ConferenceSchedule;
+use App\Models\Session;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\DB;
+use App\Models\AcceptationsSetting;
+use GuzzleHttp\Client;
+use Illuminate\Support\Facades\Http; 
+
+
+
+
 
 
 use Illuminate\Http\Request;
@@ -79,15 +89,42 @@ class PaperController extends Controller
         $paper->submitted_at = $submittedAt;
         $paper->paperFile = $paperFile;
         $paper->save();
-    
+        
+        \Log::info('Paper file path: ' . $paperFile);
+
+        // Attach the conference role to the user
         if ($user) {
             $conference = Conference::find($request->input('conference_id'));
             $user->conferences()->attach($conference, ['role' => 'author']);
         }
     
-        return response()->json(['message' => 'Paper submitted successfully'], 200);
-    }
+        // Call the OCR API endpoint and handle the response
+        $response = Http::post(env('FLASK_API_URL2') . '/verify_author_names', ['pdf_path' => $paper->paperFile ]);
+            
+
     
+        $authorNamesFound = $response->json()['author_names_found'];
+    
+        if ($response->successful() && $response->json() && isset($response->json()['author_names_found'])) {
+            // Get the value of 'author_names_found'
+            $authorNamesFound = $response->json()['author_names_found'];
+    
+            if ($authorNamesFound) {
+                // If author names are found, delete the saved paper and the role
+                $paper->delete();
+                if ($user) {
+                    $user->conferences()->detach($conference);
+                }
+                return response()->json(['message' => 'Author names found in the paper. Paper submission failed.'], 400);
+            }
+    
+            // If author names are not found, proceed with success message
+            return response()->json(['message' => 'Paper submitted successfully'], 200);
+        } else {
+            // Handle the case when the response doesn't have the expected structure or fails
+            return response()->json(['message' => 'Error processing OCR.'], 500);
+        }
+    }
     public function calculateAverageScore($paperId)
     {
     // Retrieve the paper object
@@ -180,11 +217,19 @@ class PaperController extends Controller
     {
         $paper = Paper::findOrFail($paperId);
 
-        // Assuming the paper file is stored in the storage/app/public directory
-        $filePath = 'public/' . $paper->paperFile;
-        
+        // Get the relative file path from the database
+        $filePath = $paper->paperFile;
+
+        // Full path to the storage directory
+        $storagePath = storage_path('app/' . $filePath);
+
+        // Check if the file exists using the absolute path
+        if (!file_exists($storagePath)) {
+            return response()->json(['message' => 'File not found'], 404);
+        }
+
         // Return the file as a downloadable response
-        return Storage::download($filePath);
+        return response()->download($storagePath);
     }
 
     public function uploadFinalVersion(Request $request, $paperId)
@@ -212,4 +257,97 @@ class PaperController extends Controller
         return response()->json(['message' => 'File upload failed'], 500);
     }
 
+    public function tryPaper($conferenceId)
+    {
+        // Get the acceptance settings for the conference
+        $acceptationsSetting = AcceptationsSetting::where('conference_id', $conferenceId)->first();
+    
+        // Check if the acceptationsSetting is not null
+        if ($acceptationsSetting) {
+            $acceptedOralPresentations = 0;
+            $acceptedPosters = 0;
+            $acceptedWaitingList = 0;
+    
+            // Fetch papers for the conference and order them by mark in descending order
+            $papers = Paper::where('conference_id', $conferenceId)
+                ->orderBy('mark', 'desc')
+                ->get();
+    
+            // Iterate through each paper
+            foreach ($papers as $paper) {
+                // Determine the acceptance setting for the paper
+                if ($acceptedOralPresentations < $acceptationsSetting->oral_presentations) {
+                    $paper->acceptations_setting = 'oral_presentations';
+                    $acceptedOralPresentations++;
+                } elseif ($acceptedPosters < $acceptationsSetting->poster) {
+                    $paper->acceptations_setting = 'poster';
+                    $acceptedPosters++;
+                } elseif ($acceptedWaitingList < $acceptationsSetting->waiting_list) {
+                    $paper->acceptations_setting = 'waiting_list';
+                    $acceptedWaitingList++;
+                } else {
+                    // If all acceptance settings are filled, reject the paper
+                    $paper->acceptations_setting = 'rejected';
+                }
+                
+                // Save the updated paper
+                $paper->save();
+            }
+        }
+    }
+    public function sessionCollect(Request $request, $conferenceId)
+    {
+        // Assuming you have a Paper model representing your papers table
+        $papers = Paper::all();
+    
+        // Prepare the paper data to be sent to the Flask API
+        $paperData = [];
+        foreach ($papers as $paper) {
+            $keywords = json_decode($paper->keywords, true);
+            $paperData[] = [
+                'title' => $paper->paperTitle,
+                'keywords' => $keywords
+            ];
+        }
+    
+        // Prepare the request data
+        $requestData = [
+            'conference_id' => $conferenceId,
+            'papers' => $paperData,
+        ];
+        \Log::info('Request data type: ' . gettype($requestData));
+    
+        // Make a POST request to the Flask API
+        $response = Http::post(env('FLASK_API_URL') . '/run_algorithm', $requestData);
+    
+        // Decode the response and return it
+        $result = $response->json();
+    
+        // Log the response data type
+        \Log::info('Response data type: ' . gettype($result));
+        \Log::info('Request data: ', $requestData);
+    
+        // Save the processed data into the database
+        foreach ($result['sessions'] as $sessionName => $sessionData) {
+            $paperIds = [];
+            foreach ($sessionData['sessionPapers'] as $paperTitle) {
+                // Find the paper by title (assuming titles are unique)
+                $paper = Paper::where('paperTitle', $paperTitle)->first();
+                if ($paper) {
+                    $paperIds[] = $paper->id;
+                }
+            }
+    
+            $session = Session::updateOrCreate(
+                ['conference_id' => $conferenceId],
+                [
+                    'sessionPaper' => json_encode($paperIds), // Save paper IDs as JSON
+                    'sessionKeywords' => json_encode($sessionData['sessionKeywords'])
+                ]
+            );
+        }
+    
+        return response()->json(['message' => 'Data processed and saved successfully.', 'result' =>$result ]);
+    }
+    
 }

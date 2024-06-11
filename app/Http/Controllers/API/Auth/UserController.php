@@ -4,7 +4,7 @@ namespace App\Http\Controllers\API\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
-use App\Models\Invitation;
+use App\Models\Invitations;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
@@ -13,6 +13,7 @@ use Laravel\Sanctum\PersonalAccessToken;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Auth\Events\Registered;
+use App\Notifications\VerifyEmailNotification;
 
 
 
@@ -33,13 +34,10 @@ class UserController extends Controller {
         }
     
         // Check if email already exists in invitations table
-        $invitation = Invitation::where('email', $request->email)->first();
+        $invitation = Invitations::where('email', $request->email)->first();
     
-        if ($invitation) {
-            $role = 'reviewer';
-        } else {
-            $role = 'user';
-        }
+        $role = $invitation ? 'reviewer' : 'user';
+
     
         $user = User::create([
             'firstName' => $request->firstName,
@@ -53,8 +51,7 @@ class UserController extends Controller {
         $user->save();
         $user->assignRole($role);
         $token = $user->createToken('auth_token')->plainTextToken;
-        $user->sendEmailVerificationNotification();
-    
+        $user->notify(new VerifyEmailNotification());
         return response()->json(['message' =>'User registered successfully. Please check your email to verify your account.', 'token' => $token, 'user' => $user], 200);
     }
     
@@ -82,14 +79,19 @@ class UserController extends Controller {
     ], 200);
 
     }
+    public function conferenceAttendance($userId)
+    {
+        $user = User::with(['conferences' => function ($query) {
+            $query->select('conferences.*', 'conference_user.role'); // Select necessary columns
+        }])->find($userId);
 
+        return response()->json($user->conferences);
+    }
     public function logout(Request $request)
     {
         $request->user()->tokens()->delete();
 
-        return response()->json([
-            'message' => 'Logged out successfully',
-        ], 200);
+        return redirect('http://localhost:8080/SignIn'); 
     }
 
     public function update(Request $request)
@@ -110,7 +112,7 @@ class UserController extends Controller {
         $user = auth()->user();
         $user->update($request->all());
 
-        return response()->json(['message' =>'User Update successfully.', 'token' => $token, 'user' => $user], 200);
+        return response()->json(['message' =>'User Update successfully.', 'user' => $user], 200);
     }
 
     public function delete(Request $request)

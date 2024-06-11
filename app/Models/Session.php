@@ -8,13 +8,18 @@ use Illuminate\Database\Eloquent\Model;
 class Session extends Model
 {
     use HasFactory;
-    protected $fillable = [
-        'start_at',
-        'end_at',
-        'conference_id',
-    ];
+    protected $fillable = ['sessionKeywords', 'sessionPaper',  'conference_id', 'conference_schedule_id'];
     public function conference()
     {
         return $this->belongsTo(Conference::class);
     }
+    
+    public function papers() {
+        return $this->hasMany(Paper::class);
+    }
+    public function conferenceSchedule()
+    {
+        return $this->belongsTo(ConferenceSchedule::class);
+    }
+    
 }

@@ -1,7 +1,7 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\API\ReviewerConferenceController;
+use App\Http\Controllers\API\Auth\VerificationController;
 
 /*
 |--------------------------------------------------------------------------
@@ -17,5 +17,12 @@ use App\Http\Controllers\API\ReviewerConferenceController;
 Route::get('/', function () {
     return view('welcome');
 });
-Route::get('/accept-invitation', [ReviewerConferenceController::class, 'show'])->name('invitation.accept');
+Route::any('/verification/verify', [VerificationController::class, 'verify'])->name('verification.verify');
 
+Route::get('/email/verify', [VerificationController::class, 'showVerificationPage'])->name('verification.verify');
+Route::get('/email/verification/success', function () {
+    return view('emails.verify-email');
+})->name('verification.success');
+Route::get('/email/verification/success', function () {
+    return view('emails.verify-email');
+})->name('verification.failed');

@@ -15,7 +15,7 @@ use App\Models\UserRoleInConference;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\Rule;
-use App\Mail\ConferenceCreatedMail;
+use App\Notifications\ConferenceCreatedNotification;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
 class ConferenceController extends Controller
@@ -24,14 +24,10 @@ class ConferenceController extends Controller
 
     public function index()
    {
-    $conferences = Conference::all()->map(function ($conference) {
-        // Assuming 'logo' is the attribute storing the logo file name
-        return $conference;
-    });
-
+        $conferences = Conference::all();
     
-    return response()->json($conferences);
-      }
+        return response()->json($conferences);
+    }
      public function show($id)
     {
         $conferences =Conference::find($id);
@@ -63,6 +59,8 @@ class ConferenceController extends Controller
 
         // Get the authenticated user
         $userID = Auth::id();
+        $logoFile = $request->file('logo')->store('logos', 'public');
+        $logoPath = Storage::url($logoFile); // Get the relative URL to the file
 
         // Create a new conference
         $conference = Conference::create([
@@ -77,17 +75,10 @@ class ConferenceController extends Controller
             'start_at' => $request->input('start_at'),
             'end_at' => $request->input('end_at'),
             'paper_subm_due_date' => $request->input('paper_subm_due_date'),
-            'logo' => $request->file('logo')->store('conferences', 'public'),
+            'logo' => $logoPath, // Save the relative path to the logo in the database
 
         ]);
-        if ($request->hasFile('logo')) {
-            $file = $request->file('logo');
-            $extension = $file->getClientOriginalExtension();
-            $filename = time() . '.' . $extension;
-            $file->move('uploads/logos/', $filename);
-            $conference->logo = $filename;
-        }
-
+        
         // Assign the chair role to the authenticated user
         $user = Auth::user();
 
@@ -97,8 +88,8 @@ class ConferenceController extends Controller
         $userConference = $conference->users()->where('users.id', $user->id)->first();
 
 
-        Mail::to($request->input('email'))->send(new ConferenceCreatedMail($user, $conference));
-        $user->update(['is_verified' => 1]);
+        $user->notify(new ConferenceCreatedNotification($conference, $user));
+
         return response()->json(['conference' => $conference,'user role in conference' => $userConference ], 201);
     }
 
@@ -107,11 +98,6 @@ class ConferenceController extends Controller
         // Find the conference
         $conference = Conference::findOrFail($id);
 
-        // Check if the user is authorized to update the conference
-        // if (!Auth::user()->hasRole('admin') && !$conference->isChair(Auth::user()->id)) {
-           //  return response()->json(['error' => 'Unauthorized action.'], 403);
-        // }  
-        // Validate the request data
         $request->validate([
             'email' => ['email', new AcademicEmail],
             'title' => 'string',
@@ -127,89 +113,63 @@ class ConferenceController extends Controller
             'review_due_date' => 'date|after:start_at|before:end_at',
             'register_due_date' => 'date|after:start_at|before:end_at',
             'acceptation_notification' => 'date|after:start_at|before:end_at',
-            'camera_ready_paper' => 'file|mimes:pdf,doc,docx|max:2048', // Adjust the file types and size as needed
 
         ]);
        
-         //$conference->register_due_date = $register_due_date ? $register_due_date : $conference->register_due_date;
-        // Update the conference
+         
         $conference->update($request->all());
 
 
-        if ($request->hasFile('logo')) {
-            $file = $request->file('logo');
-            $extension = $file->getClientOriginalExtension();
-            $filename = time() . '.' . $extension;
-            $file->move('uploads/logos/', $filename);
-            $conference->logo = $filename;
-        }
+        
 
-        if ($request->hasFile('camera_ready_paper')) {
-            $file = $request->file('camera_ready_paper');
-            $extension = $file->getClientOriginalExtension();
-            $filename = time() . '.' . $extension;
-            $file->move('uploads/camera_ready_papers/', $filename);
-            $conference->camera_ready_paper = $filename;
-        }
+       
         return response()->json(['conference' => $conference, 'message' => 'Conference updated successfully'], 200);
     }
 
     public function ConfereceTopic(Request $request, $id)
-    {
-        $validatedData = $request->validate([
-            'topic_name' => 'required|string|max:255',
-            'subtopics.*' => 'string|max:255', // Validate subtopics only if present
-        ]);
-    
-            // Create the topic
-            $topic = new Topic();
-            $topic->name = $validatedData['topic_name'];
-            $topic->conference_id = $id;
-            $topic->save();
-    
-            // Create subtopics for the topic if they exist
-            if (isset($validatedData['subtopics'])) {
-                $subtopics = [];
-                foreach ($validatedData['subtopics'] as $subtopicName) {
-                    $subtopic = new Subtopic();
-                    $subtopic->name = $subtopicName;
-                    $subtopic->topic_id = $topic->id; // Associate the subtopic with the newly created topic
-                    $subtopic->save();
-                    $subtopics[] = $subtopic;
-                }
-            } else {
-                // No subtopics provided, set $subtopics to null or an empty array
-                $subtopics = null; // Or $subtopics = [];
-            }
-    
-            // Return success response
-            return response()->json([
-                'message' => 'Topic and subtopics created successfully',
-                'topic' => $topic,
-                'subtopics' => $subtopics,
-            ], 201);
-            }  
+{
+    $validatedData = $request->validate([
+        'topic_id' => 'nullable|exists:topics,id', // Allow topic_id to be nullable for creating new topics
+        'topic_name' => 'required|string|max:255',
+        'subtopics.*' => 'string|max:255',
+    ]);
+
+    // If topic_id is provided, attempt to update the existing topic; otherwise, create a new topic
+    if ($validatedData['topic_id']) {
+        // Topic exists, update it
+        $topic = Topic::findOrFail($validatedData['topic_id']);
+        $topic->name = $validatedData['topic_name'];
+        $topic->save();
+    } else {
+        // Topic doesn't exist, create a new one
+        $topic = new Topic();
+        $topic->name = $validatedData['topic_name'];
+        $topic->conference_id = $id;
+        $topic->save();
+    }
+
+    // Update or create subtopics for the topic
+    $subtopics = [];
+    foreach ($validatedData['subtopics'] as $subtopicName) {
+        $subtopic = Subtopic::updateOrCreate(
+            ['topic_id' => $topic->id, 'name' => $subtopicName],
+            ['topic_id' => $topic->id] // Ensure topic_id is set correctly
+        );
+        $subtopics[] = $subtopic;
+    }
+
+    // Return success response
+    return response()->json([
+        'message' => 'Topic and subtopics updated/created successfully',
+        'topic' => $topic,
+        'subtopics' => $subtopics,
+    ]);
+}
+             
             
-    public function createCallForPaper(Request $request, $conferenceId)
-    {
-                // Validate the request data
-                $request->validate([
-                    'body' => 'required|string',
-                    'start_at' => 'required|date',
-                    'end_at' => 'required|date|after:start_at',
-                ]);
+    
             
-                // Create the call for paper
-                $callForPaper = PaperCall::create([
-                    'conference_id' => $conferenceId,
-                    'body' => $request->input('body'),
-                    'start_at' => $request->input('start_at'),
-                    'end_at' => $request->input('end_at'),
-                ]);
-            
-                // Return a response indicating success
-                return response()->json(['message' => 'Call for paper created successfully', 'callForPaper' => $callForPaper], 201);
-    }        
+      
 
     public function inviteReviewers(Request $request)
     {
@@ -248,22 +208,12 @@ class ConferenceController extends Controller
 
     public function notAccepted()
     {
-        // Retrieve conferences where is_accept column is 2 (assuming 2 means not accepted)
-        $conferences = Conference::where('is_accept', 2)->get();
-    // Append logo URL to each conference object
-    $conferences->transform(function ($conference) {
-        // Assuming you have a column named 'logo' in the conferences table
-        $conference->logo_url = asset("uploads/logos/{$conference->logo}");
-        return $conference;
-    });
+        $conferences = Conference::where('is_accept', 2)
+            ->where('is_verified', 1)
+            ->get();
 
-    // Return JSON response with conferences including logo URLs
-    return response()->json($conferences);
-}
-
-
-
-
+        return response()->json($conferences);
+    }
     public function accept(Request $request, $id)
     {
         // Get the conference
@@ -282,6 +232,19 @@ class ConferenceController extends Controller
 
             return response()->json(['message' => 'Conference accepted successfully'], 200);
         }
+
+        return response()->json(['message' => 'Unauthorized'], 403);
+
+    }
+
+
+    public function Confirmation(Request $request, $id)
+    {
+        // Get the conference
+        $conference = Conference::findOrFail($id);
+            $conference->is_verified = 1;
+            $conference->save();
+         return response()->json(['message' => 'Conference accepted successfully'], 200);
     }
     public function reject(Request $request, $id)
     {
@@ -299,8 +262,11 @@ class ConferenceController extends Controller
             $conference->is_accept = 0;
             $conference->save();
 
-            return response()->json(['message' => 'Conference accepted successfully'], 200);
+            return response()->json(['message' => 'Conference rejected  successfully'], 200);
         }
+
+        return response()->json(['message' => 'Unauthorized'], 403);
+
     }
 
 

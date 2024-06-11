@@ -47,5 +47,8 @@ class Paper extends Model
     {
         return $this->belongsTo(User::class);
     }
+    public function session() {
+        return $this->belongsTo(Session::class);
+    }
     
 }

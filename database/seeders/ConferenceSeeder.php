@@ -63,7 +63,7 @@ for ($i = 0; $i < $numConferences; $i++) {
         'end_at' => $faker->dateTimeBetween('now', '+2 years'),
         'review_due_date' => $faker->dateTimeBetween('now', '+2 years'),
         'paper_subm_due_date' => $faker->dateTimeBetween('now', '+1 year'),
-        'logo' => 'uploads/logos/1713749576.jpg', // Default logo path
+        'logo' => '/storage/logos/lBg5HCKmQcxr3uK2v5FEyro6mj3LWOW90uiDXEpV.jpg', // Default logo path
     ]);
 
     // Assign a user with the role of "chair" to the conference

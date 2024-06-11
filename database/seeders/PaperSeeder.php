@@ -1,11 +1,14 @@
 <?php
+
 namespace Database\Seeders;
+
 
 use Illuminate\Database\Seeder;
 use App\Models\Paper;
 use App\Models\Conference;
 use App\Models\User;
 use Carbon\Carbon;
+use Illuminate\Support\Arr;
 
 class PaperSeeder extends Seeder
 {
@@ -20,30 +23,322 @@ class PaperSeeder extends Seeder
         $conferences = Conference::all();
         $users = User::all(); // Get all users
 
-        foreach ($conferences as $conference) {
-            // Create papers for each conference
-            for ($i = 0; $i < 5; $i++) { // Assuming you want to create 10 papers for each conference
-                $paper = new Paper();
-                $paper->conference_id = $conference->id;
-                
-                // Assign a random user to the paper
-                $randomUser = $users->random();
-                $paper->user_id = $randomUser->id;
+        $paperTitles = [
+            'Innovations in AI',
+            'Data Mining Techniques',
+            'Advances in Cybersecurity',
+            'Quantum Computing Applications',
+            'Machine Learning in Healthcare',
+            'Big Data Analytics',
+            'Internet of Things (IoT)',
+            'Blockchain Technology',
+            'Cloud Computing Trends',
+            'Natural Language Processing',
+            'Robotics and Automation',
+            'Bioinformatics Research',
+            'Network Security Protocols',
+            'Deep Learning Methods',
+            'Computer Vision Applications',
+            'Augmented Reality Development',
+            'Virtual Reality Innovations',
+            'Cryptocurrency Trends',
+            'Smart Cities Solutions',
+            'Wireless Sensor Networks',
+            'Human-Computer Interaction',
+            'Ethical AI Development',
+            'Predictive Analytics',
+            'Fintech Innovations',
+            'E-commerce Trends',
+            'Health Informatics',
+            'Social Media Analysis',
+            'Geospatial Data Applications',
+            'Energy Systems Optimization',
+            'Renewable Energy Technologies',
+            'Internet Privacy Solutions',
+            'Smart Home Automation',
+            'Data Visualization Techniques',
+            'Cloud Security Measures',
+            'Edge Computing Advancements',
+            'Artificial General Intelligence',
+            'Quantum Cryptography Protocols',
+            'Supply Chain Optimization',
+            'Digital Marketing Strategies',
+            'Healthcare Informatics',
+            'Virtual Assistant Technologies',
+            'Neural Network Architectures',
+            'Computer Graphics Innovations',
+            'Green Energy Initiatives',
+            'Economic Forecasting Models',
+            'Space Exploration Technologies',
+            'Natural Disaster Prediction',
+            'Cybersecurity Threat Detection',
+            'Biometric Authentication Systems',
+            'Online Learning Platforms'
+        ];
 
-                // You can set other attributes as needed
-                $paper->paperTitle = 'Paper ' . ($i + 1); // Example paper title
-                $paper->submitted_at = Carbon::now()->subDays(rand(1, 30)); // Random submission date
-                $paper->paperfile = 'path/to/paperfile' . ($i + 1); // Example paper file path
-                $paper->status = 'pending'; // Default status
-                $paper->mark = 0; // Default mark
+        // List of keywords
+        // List of keywords
+        $keywordsList = [
+            'Artificial Intelligence',
+            'Data Science',
+            'Cybersecurity',
+            'Quantum Computing',
+            'Machine Learning',
+            'Big Data',
+            'Networks',
+            'Deep Learning',
+            'Robotics',
+            'Cloud Computing',
+            'Blockchain',
+            'IoT',
+            'Bioinformatics',
+            'Natural Language Processing',
+            'Human-Computer Interaction',
+            'Fintech',
+            'E-commerce',
+            'Health Informatics',
+            'Geospatial Data',
+            'Renewable Energy',
+            'Predictive Analytics',
+            'Energy Systems',
+            'Social Media Analysis',
+            'Ethical AI',
+            'Data Visualization',
+            'Digital Marketing',
+            'Edge Computing',
+            'Smart Home',
+            'Quantum Cryptography',
+            'Supply Chain',
+            'Virtual Assistant',
+            'Neural Networks',
+            'Computer Graphics',
+            'Green Energy',
+            'Economic Forecasting',
+            'Space Exploration',
+            'Natural Disaster',
+            'Biometric Authentication',
+            'Online Learning',
+            'Augmented Reality',
+            'Virtual Reality',
+            'Cryptocurrency',
+            'Smart Cities',
+            'Wireless Sensor Networks',
+            'Augmented Intelligence',
+            'Smart Agriculture',
+            '3D Printing',
+            'Internet Privacy',
+            'Humanoid Robotics',
+            'Genomic Sequencing',
+            'Autonomous Vehicles',
+            'Smart Manufacturing',
+            'Climate Change Modeling',
+            'Remote Sensing',
+            'Precision Agriculture',
+            'Quantum Networking',
+            'Nanotechnology',
+            'Supply Chain Optimization',
+            'Social Robotics',
+            'Telemedicine',
+            'Healthcare Robotics',
+            'Behavioral Analytics',
+            'Brain-Computer Interfaces',
+            'Quantum Sensors',
+            'Quantum Algorithms',
+            'Quantum Communication',
+            'Quantum Error Correction',
+            'Quantum Metrology',
+            'Quantum Cryptography',
+            'Quantum Simulation',
+            'Quantum Control',
+            'Quantum Information Theory',
+            'Quantum Machine Learning',
+            'Quantum Security',
+            'Quantum Hardware',
+            'Quantum Software',
+            'Quantum Networking',
+            'Quantum Sensing',
+            'Quantum Imaging',
+            'Quantum Metrology',
+            'Quantum Optics',
+            'Quantum Physics',
+            'Quantum Mechanics',
+            'Quantum Theory',
+            'Quantum Entanglement',
+            'Quantum Superposition',
+            'Quantum State',
+            'Quantum Gate',
+            'Quantum Circuit',
+            'Quantum Algorithm',
+            'Quantum Channel',
+            'Quantum Error',
+            'Quantum Computing Model',
+            'Quantum Complexity Theory',
+            'Quantum Cryptography',
+            'Quantum Key Distribution',
+            'Quantum Cryptographic Protocol',
+            'Quantum Computing Software',
+            'Quantum Computing Hardware',
+            'Quantum Computer',
+            'Quantum Processor',
+            'Quantum Bit',
+            'Qubit',
+            'Quantum Register',
+            'Quantum Gate',
+            'Quantum Superposition',
+            'Quantum Entanglement',
+            'Quantum Measurement',
+            'Quantum State',
+            'Quantum Algorithm',
+            'Quantum Complexity Theory',
+            'Quantum Computing Model',
+            'Quantum Programming',
+            'Quantum Simulation',
+            'Quantum Error Correction',
+            'Quantum Communication',
+            'Quantum Cryptography',
+            'Quantum Teleportation',
+            'Quantum Internet',
+            'Quantum Network',
+            'Quantum Secure Direct Communication',
+            'Quantum Entanglement Swapping',
+            'Quantum Secret Sharing',
+            'Quantum Dense Coding',
+            'Quantum Key Distribution',
+            'Quantum Satellite Communication',
+            'Quantum Sensing',
+            'Quantum Imaging',
+            'Quantum Metrology',
+            'Quantum Microscopy',
+            'Quantum Sensing',
+            'Quantum Magnetometry',
+            'Quantum Gravimetry',
+            'Quantum Accelerometry',
+            'Quantum Clocks',
+            'Quantum Navigation',
+            'Quantum Metrology',
+            'Quantum Optics',
+            'Quantum Photonic Devices',
+            'Quantum Photonics',
+            'Quantum Optical Circuits',
+            'Quantum Integrated Photonics',
+            'Quantum Nanophotonics',
+            'Quantum Plasmonics',
+            'Quantum Optomechanics',
+            'Quantum Nonlinear Optics',
+            'Quantum Resonators',
+            'Quantum Dots',
+            'Quantum Light Sources',
+            'Quantum Interference',
+            'Quantum Coherence',
+            'Quantum Memory',
+            'Quantum Repeaters',
+            'Quantum Teleportation',
+            'Quantum Networks',
+            'Quantum Cryptography',
+            'Quantum Secure Direct Communication',
+            'Quantum Key Distribution',
+            'Quantum Internet',
+            'Quantum Computing',
+            'Quantum Simulation',
+            'Quantum Annealing',
+            'Quantum Neural Networks',
+            'Quantum Machine Learning',
+            'Quantum Optimization',
+            'Quantum Robotics',
+            'Quantum Chemistry',
+            'Quantum Materials',
+            'Quantum Biology',
+            'Quantum Physics',
+            'Quantum Mechanics',
+            'Quantum Theory',
+            'Quantum Information',
+            'Quantum Entanglement',
+            'Quantum Superposition',
+            'Quantum Measurement',
+            'Quantum State',
+            'Quantum Algorithm',
+            'Quantum Complexity',
+            'Quantum Parallelism',
+            'Quantum Error Correction',
+            'Quantum Decoherence',
+            'Quantum Communication',
+            'Quantum Cryptography',
+            'Quantum Key Distribution',
+            'Quantum Teleportation',
+            'Quantum Telephony',
+            'Quantum Computing',
+            'Quantum Networking',
+            'Quantum Information Science',
+            'Quantum Electronics',
+            'Quantum Optics',
+            'Quantum Photonics',
+            'Quantum Acoustics',
+            'Quantum Thermodynamics',
+            'Quantum Hydrodynamics',
+            'Quantum Statistics',
+            'Quantum Electrodynamics',
+            'Quantum Chromodynamics',
+            'Quantum Gravity',
+            'Quantum Field Theory',
+            'Quantum Mechanics',
+            'Quantum Kinematics',
+            'Quantum Dynamics',
+            'Quantum Symmetry',
+            'Quantum Entropy',
+            'Quantum State Space',
+            'Quantum Hilbert Space',
+            'Quantum Wave Function',
+            'Quantum Spin',
+            'Quantum Angular Momentum',
+            'Quantum Measurement',
+            'Quantum Observer',
+            'Quantum Probability',
+            'Quantum Interference',
+            'Quantum Superposition',
+            'Quantum Tunneling',
+            'Quantum Wave Packet',
+            'Quantum Harmonic Oscillator',
+            'Quantum Potential',
+            'Quantum Resonance',
+            'Quantum Resonator',
+            'Quantum Cavity',
+            'Quantum Energy',
+            'Quantum Oscillation',
+            'Quantum Vibration',
+            'Quantum Rotation',
+            'Quantum Spin',
+            'Quantum Angular Momentum',
+            'Quantum Transitions',
+            'Quantum Absorption',
+            'Quantum Emission',];
 
-                // New fields
-                $paper->authors = json_encode(["Author1", "Author2"]); // Example authors with first and last names
-                $paper->abstract = 'This is the abstract of Paper ' . ($i + 1); // Example abstract
-                $paper->keywords = 'keyword' . ($i + 1); // Example keyword
+        for ($i = 0; $i < 100; $i++) {
+            // Select a random conference
+            $conference = $conferences->random();
 
-                $paper->save();
-            }
+            // Select a random user
+            $randomUser = $users->random();
+
+            // Select a random title
+            $paperTitle = Arr::random($paperTitles);
+
+            // Select a random number of keywords (between 3 and 6)
+            $numKeywords = rand(3, 6);
+            $selectedKeywords = Arr::random($keywordsList, $numKeywords);
+
+            // Create a new paper
+            $paper = new Paper();
+            $paper->conference_id = $conference->id;
+            $paper->user_id = $randomUser->id;
+            $paper->paperTitle = $paperTitle;
+            $paper->submitted_at = Carbon::now()->subDays(rand(1, 30));
+            $paper->paperfile = 'storage\app\papers\zjWocQmCK3K0GZecmePn193dYIxkr6cB6limeqEs.pdf';
+            $paper->mark = mt_rand(10, 80) / 10;
+            $paper->authors = json_encode(["Author1", "Author2"]);
+            $paper->abstract = 'This is the abstract of ' . $paperTitle;
+            $paper->keywords = json_encode($selectedKeywords);
+
+            $paper->save();
         }
     }
 }

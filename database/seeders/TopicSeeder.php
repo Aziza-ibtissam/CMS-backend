@@ -16,13 +16,26 @@ class TopicSeeder extends Seeder
     public function run()
     {
         $conferences = Conference::all();
-        $faker = Faker::create();
+        $topics = [
+            'Computer Science',
+            'Data Science',
+            'Artificial Intelligence',
+            'Cybersecurity',
+            'Software Engineering',
+            'Networks',
+            'Information Systems',
+            'Human-Computer Interaction',
+            'Bioinformatics',
+            'Robotics'
+        ];
 
         foreach ($conferences as $conference) {
-            $topic = new Topic();
-            $topic->conference_id = $conference->id;
-            $topic->name = ucfirst($faker->word); // Example: 'Artificial Intelligence'
-            $topic->save();
+            foreach ($topics as $topicName) {
+                $topic = new Topic();
+                $topic->conference_id = $conference->id;
+                $topic->name = $topicName;
+                $topic->save();
+            }
         }
     }
 }

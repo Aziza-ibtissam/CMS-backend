@@ -23,4 +23,21 @@ class TopicController extends Controller
         'subtopics' => $subtopics
     ]);
 }
+
+public function deleteTopic(Request $request, $conferenceId, $topicId)
+{
+    // Find the topic by ID
+    $topic = Topic::findOrFail($topicId);
+
+    // Ensure the topic belongs to the specified conference
+    if ($topic->conference_id != $conferenceId) {
+        return response()->json(['error' => 'Topic not found in conference'], 404);
+    }
+
+    // Delete the topic and its associated subtopics
+    $topic->delete();
+    Subtopic::where('topic_id', $topicId)->delete();
+
+    return response()->json(['message' => 'Topic and subtopics deleted successfully'], 200);
+}
 }
