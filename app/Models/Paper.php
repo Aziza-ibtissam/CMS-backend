@@ -11,6 +11,7 @@ class Paper extends Model
     protected $fillable = [
         'paperFile',
         'paperTitle',
+        'paperTopic',
         'abstract',
         'keywords',
         'submitted_at',

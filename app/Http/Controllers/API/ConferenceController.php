@@ -113,6 +113,7 @@ class ConferenceController extends Controller
             'review_due_date' => 'date|after:start_at|before:end_at',
             'register_due_date' => 'date|after:start_at|before:end_at',
             'acceptation_notification' => 'date|after:start_at|before:end_at',
+            'double_blind' => 'boolean'  
 
         ]);
        

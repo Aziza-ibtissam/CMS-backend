@@ -20,6 +20,8 @@
         @endforeach
     </ul>
     <p><b>Submission Deadline: </b>{{$conference->paper_subm_due_date}}</p>
+    <p><b>Register Deadline: </b>{{$conference->paper_subm_due_date}}</p>
+    <p><b>Acceptance Notifications : </b>{{$conference->paper_subm_due_date}}</p>
     <p> If you are interested, you can visit the conference official website.</p>
     <a href="{{ $websiteUrl  }}"><button style="background-color: green; color: white;">Visit WebSite</button></a>
     <p>Please contact {{ $conference->email }} if you have questions about the conference.</p>

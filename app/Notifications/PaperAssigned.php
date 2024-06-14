@@ -47,7 +47,7 @@ class PaperAssigned extends Notification implements ShouldQueue
     {
         return (new MailMessage)
                     ->subject('New Paper Assignment')
-                    ->greeting('Hello ' . $notifiable->firstName)
+                    ->greeting('Hello ' .  $notifiable->firstName . ' ' . $notifiable->lastName )
                     ->line('You have been assigned to review the paper: ' . $this->paper->paperTitle)
                     ->action('View Paper', url('/papers/' . $this->paper->id))
                     ->line('Thank you for your contribution!');

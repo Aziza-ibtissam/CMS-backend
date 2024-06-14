@@ -53,6 +53,8 @@ Route::middleware(['auth:sanctum'])->group(function () {
 
     Route::get('/conference/{id}', [ConferenceController::class ,'show']);
     Route::post('/update/conference/{id}', [ConferenceController::class ,'update']);
+    Route::post('/conference/{conferenceId}/topic', [ConferenceController::class ,'ConfereceTopic']);
+
     Route::put('/conference/{conferenceId}/topic/{topicId}', [ConferenceController::class ,'ConfereceTopic']);
     Route::post('/conferencesrequest', [ConferenceController::class, 'create']);
     Route::put('/conference/confirm/{conferenceId}', [ConferenceController::class ,'Confirmation']);
@@ -78,7 +80,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::get('/papers/{paperId}/average-score', [PaperController::class, 'calculateAverageScore']);
     Route::get('/papersAuthor/{conferenceId}/{userId}', [PaperController::class, 'getPaperForAuthor']);
     Route::get('/paper/uploadFinalVersion/{paperId}', [PaperController::class, 'getPaperForAuthor']);
-    Route::get('/auto-assign/{conferenceId}', [AssignPaperController::class, 'autoAssign']);
+    Route::post('/assign-reviewers/{conferenceId}', [AssignPaperController::class, 'assignReviewers']);
     Route::get('/reviewer/assignedPapers/{conferenceId}', [AssignPaperController::class, 'getAssignedPapers']);
 
     Route::get('/reviewers/{conferenceId}', [AssignPaperController::class, 'getReviewers']);
@@ -86,7 +88,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::get('/papers/{paperId}/download', [PaperController::class, 'download']);
     Route::post('/try-papers/{conferenceId}',  [PaperController::class,'tryPaper']);
     Route::post('/testPython/{conferenceId}',  [PaperController::class,'sessionCollect']);
-    Route::post('/testAssignSlot/{conferenceId}',  [SessionController::class,'assign_slot']);
+    Route::post('/AssignSlot/{conferenceId}',  [SessionController::class,'assign_slot']);
 
     Route::get('/fetchPaperTitles/{conferenceId}', [SessionController::class, 'fetchPaperTitles']);
     Route::get('/fetchSessionsWithSchedule/{conferenceId}', [SessionController::class, 'fetchSessionsWithSchedule']);
@@ -95,7 +97,6 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::post('/saveForm',[FormController::class,'saveForm']);
     Route::get('/getFormForReview/{conferenceId}',[FormController::class,'getFormForReview']);
     Route::post('/storeEvaluation/{paperId}',[AssignPaperController::class,'storeEvaluation']);
-    Route::get('/organize-sessions', [SessionController::class, 'organizeSessions']);
     Route::get('/sessions/{session}/papers', [SessionController::class, 'getPapersForSession']);
     Route::get('/conferences/{conferenceId}/schedules', [ConferenceScheduleController::class, 'showByConference']);
     Route::post('/conferencesSchedule', [ConferenceScheduleController::class, 'store']);

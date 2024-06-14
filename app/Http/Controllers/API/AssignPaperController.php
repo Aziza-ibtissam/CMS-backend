@@ -12,6 +12,8 @@ use App\Models\User;
 use App\Notifications\PaperAssigned;
 use App\Http\Controllers\API\PaperController;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Http; 
+
 
 
 class AssignPaperController extends Controller
@@ -39,82 +41,89 @@ class AssignPaperController extends Controller
     }
     
 
-    public function autoAssign($conferenceId)
+    public function assignReviewers(Request $request, $conferenceId)
     {
-        $conference = Conference::find($conferenceId);
-
-         if (!$conference) {
-            return response()->json(['message' => 'Conference not found'], 404);
-        }
-
-        $papers = Paper::where('conference_id', $conferenceId)->get();
-        $reviewers = $conference->users()
-            ->wherePivot('role', 'reviewer')
-            ->get()
-            ->filter(function ($user) use ($conferenceId) {
-                return Invitations::where('conference_id', $conferenceId)
-                    ->where('email', $user->email)
-                    ->where('invitationStatus', 'accepted')
-                    ->exists();
-                });
-
-        $numPapers = $papers->count();
-        $numReviewers = $reviewers->count();
-
-         // Log the number of papers and reviewers
-        \Log::info("Number of papers: $numPapers");
-        \Log::info("Number of reviewers: $numReviewers");
-
-        if ($numPapers == 0) {
-             return response()->json(['message' => 'No papers available for assignment']);
-        }
-
-        if ($numReviewers / $numPapers < 2) {
-             return response()->json(['message' => 'The number of reviewers is insufficient. Please add more reviewers.']);
-        }
-
-        $assignedReviewers = collect();
-
+        $papers = Paper::where('conference_id', $conferenceId)->get(['id', 'paperTopic']);
+        $reviewers = Invitations::where('conference_id', $conferenceId)
+            ->where('invitationStatus', 'accepted')
+            ->get(['email', 'reviewerTopic']);
+    
+        // Transform papers data
+        $transformedPapers = [];
         foreach ($papers as $paper) {
-            $reviewersAssigned = $this->assignReviewers($paper, $reviewers, $numPapers, $assignedReviewers);
-            $paper->reviewers()->sync($reviewersAssigned->pluck('id')->toArray());
-            $assignedReviewers = $assignedReviewers->merge($reviewersAssigned);
+            $topics = str_replace(['"', '\\'], '', $paper->paperTopic);
+            $topics = explode(',', $topics);
+            $transformedPapers[] = ['id' => $paper->id, 'topics' => $topics];
         }
-
-         return response()->json(['message' => 'Papers have been successfully assigned to reviewers']);
-    }
-
-      private function assignReviewers($paper, $reviewers, $numPapers, $assignedReviewers)
-   {
-        $paperKeywords = explode(',', $paper->keywords);
-        $matchedReviewers = collect();
-
-        // Matching reviewers from registered users with accepted invitations
+    
+        // Transform reviewers data
+        $transformedReviewers = [];
         foreach ($reviewers as $reviewer) {
-            if (!$assignedReviewers->contains($reviewer)) {
-                $reviewerTopic = Invitations::where('email', $reviewer->email)
-                     ->where('invitationStatus', 'accepted')
-                     ->value('reviewerTopic');
-
-                if (!empty($reviewerTopic) && in_array($reviewerTopic, $paperKeywords)) {
-                     $matchedReviewers->push($reviewer);
+            $expertise = str_replace(['"', '\\'], '', $reviewer->reviewerTopic);
+            $expertise = explode(',', $expertise);
+            $transformedReviewers[] = ['id' => $reviewer->email, 'expertise' => $expertise];
+        }
+        \Log::info('requset data type: ' . json_encode($transformedReviewers));
+        \Log::info('requset data type: ' . json_encode($transformedPapers));
+        // Prepare payload for Flask API
+        $payload = [
+            'papers' => $transformedPapers,
+            'reviewers' => $transformedReviewers
+        ];
+    
+        // Send data to Flask API
+        $response = Http::post('http://127.0.0.1:5054/assign-reviewers', $payload);
+    
+        // Process response from Flask API (assuming assignments are saved in the database)
+        $assignments = $response->json('assignments');
+    
+        foreach ($assignments as $assignment) {
+            $paperId = $assignment['paper_id'];
+            foreach ($assignment['reviewers'] as $reviewerEmail) {
+                $user = User::where('email', $reviewerEmail)->first();
+    
+                if ($user) {
+                    AssignPaper::create([
+                        'paper_id' => $paperId,
+                        'user_id' => $user->id
+                    ]);
+                    //$user->notify(new PaperAssigned(Paper::find($paperId)));
                 }
             }
         }
-
-         // Check if there are matched reviewers
-        if ($matchedReviewers->isEmpty()) {
-             return collect(); // Return an empty collection if no reviewers are available
-        }
-
-         // Calculate the number of reviewers per paper
-         $numReviewersPerPaper = min(max(3, floor($reviewers->count() / $numPapers)), 5);
-
-         // Select random reviewers from matched reviewers
-         $selectedReviewers = $matchedReviewers->random(min($numReviewersPerPaper, $matchedReviewers->count()));
-
-        return $selectedReviewers;
+    
+        return response()->json(['message' => 'Assignments saved successfully']);
     }
+
+
+    public function manualAssign(Request $request, $reviewerid)
+    {
+
+    // Step 1: Retrieve the reviewer
+    $reviewer = User::findOrFail($reviewerId);
+
+    // Step 2: Retrieve the paper IDs and additional data from the request
+    $assignments = $request->input('assignments');
+
+    // Step 3: Insert records into the assign_papers table
+    foreach ($assignments as $assignment) {
+        // Example structure assuming 'assignments' is an array of arrays
+        $paperId = $assignment['paper_id'];
+       
+
+        // Insert into the assign_papers table
+        AssignPapers::create([
+            'user_id' => $reviewer->id,
+            'paper_id' => $paperId,
+            
+        ]);
+    }
+
+    // Optionally, return a response or redirect to a success page
+    return response()->json(['message' => 'Papers assigned successfully'], 200);
+}
+
+
 
     public function getReviewers($conferenceId)
     {

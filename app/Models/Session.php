@@ -18,8 +18,8 @@ class Session extends Model
         return $this->hasMany(Paper::class);
     }
     public function conferenceSchedule()
-    {
-        return $this->belongsTo(ConferenceSchedule::class);
-    }
+{
+    return $this->belongsTo(ConferenceSchedule::class, 'conference_schedules_id');
+}
     
 }

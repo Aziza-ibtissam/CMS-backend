@@ -12,12 +12,12 @@ class DatabaseSeeder extends Seeder
     {
         $this->call(PermissionSeeder::class);
         $this->call(UsersSeeder::class);
-        $this->call(ConferenceSeeder::class);
-        $this->call(TopicSeeder::class);
-        $this->call(SubtopicSeeder::class);
-        $this->call(PaperSeeder::class);
-        $this->call(InvitationsSeeder::class);
-        $this->call(AssignPaperSeeder::class);
+        //$this->call(ConferenceSeeder::class);
+        //$this->call(TopicSeeder::class);
+        //$this->call(SubtopicSeeder::class);
+       // $this->call(PaperSeeder::class);
+       // $this->call(InvitationsSeeder::class);
+        //$this->call(AssignPaperSeeder::class);
 
 
     }

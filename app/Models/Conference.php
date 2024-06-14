@@ -24,6 +24,7 @@ class Conference extends Model
         'userID',
        'register_due_date',
        'acceptation_notification',
+       'double_blind',
        
     ];
     public function users()

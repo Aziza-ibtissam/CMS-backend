@@ -45,44 +45,56 @@ class PaperController extends Controller
     {
         // Decode authors JSON
         $authorsArray = $request->input('authors');
-
+        
         // Validate the request
         $request->validate([
             'paperFile' => 'required|file|max:2048',
             'conference_id' => 'required|exists:conferences,id',
             'paperTitle' => 'required|string',
+            'paperTopic' => 'required|string',
             'submitted_at' => 'required|date',
             'abstract' => 'required|string',
             'keywords' => 'required|string',
             'authors' => 'required|array',
             'email' => 'required|email|exists:users,email'
         ]);
-        $existingPaper = Paper::where('conference_id', $request->input('conference_id'))
-        ->where(function($query) use ($request, $authorsArray) {
-            $query->where('abstract', $request->input('abstract'))
-                  ->orWhere('keywords', $request->input('keywords'))
-                  ->orWhere('authors', json_encode($authorsArray));
-        })
-        ->first();
+        
+        $conference = Conference::find($request->input('conference_id'));
+        
+        if (!$conference) {
+            return response()->json(['message' => 'Conference not found'], 404);
+        }
+        
+        $existingPaper = Paper::where('conference_id', $conference->id)
+            ->where(function($query) use ($request, $authorsArray) {
+                $query->where('abstract', $request->input('abstract'))
+                      ->orWhere('keywords', $request->input('keywords'))
+                      ->orWhere('authors', json_encode($authorsArray));
+            })
+            ->first();
+        
         if ($existingPaper) {
             return response()->json(['message' => 'This paper has already been submitted to this conference'], 409);
         }
+        
         $user = User::where('email', $request->input('email'))->first();
+        
         if (!$user) {
-           return response()->json(['message' => 'User not found'], 404);
+            return response()->json(['message' => 'User not found'], 404);
         }
-    
+        
         $submittedAt = date('Y-m-d H:i:s', strtotime($request->input('submitted_at')));
-    
+        
         if ($request->hasFile('paperFile')) {
             $paperFile = $request->file('paperFile')->store('papers');
         }
-    
+        
         // Store the submitted paper details
         $paper = new Paper();
-        $paper->conference_id = $request->input('conference_id');
+        $paper->conference_id = $conference->id;
         $paper->user_id = $user->id;
         $paper->paperTitle = $request->input('paperTitle');
+        $paper->paperTopic = $request->input('paperTopic');
         $paper->abstract = $request->input('abstract');
         $paper->keywords = $request->input('keywords');
         $paper->authors = json_encode($authorsArray); // Save the authors as a JSON string
@@ -91,42 +103,43 @@ class PaperController extends Controller
         $paper->save();
         
         \Log::info('Paper file path: ' . $paperFile);
-
+        
         // Attach the conference role to the user
         if ($user) {
-            $conference = Conference::find($request->input('conference_id'));
             $user->conferences()->attach($conference, ['role' => 'author']);
         }
-    
-        // Call the OCR API endpoint and handle the response
-        $response = Http::post(env('FLASK_API_URL2') . '/verify_author_names', ['pdf_path' => $paper->paperFile ]);
-            
-
-    
-        $authorNamesFound = $response->json()['author_names_found'];
-    
-        if ($response->successful() && $response->json() && isset($response->json()['author_names_found'])) {
-            // Get the value of 'author_names_found'
-            $authorNamesFound = $response->json()['author_names_found'];
-    
-            if ($authorNamesFound) {
-                // If author names are found, delete the saved paper and the role
-                $paper->delete();
-                if ($user) {
-                    $user->conferences()->detach($conference);
+        
+        $filePath = storage_path('app') . DIRECTORY_SEPARATOR . str_replace('/', DIRECTORY_SEPARATOR, $paperFile);
+        \Log::info('Paper file path: ' . $filePath);
+        
+        // Check if double_blind verification is enabled for the conference
+        if ($conference->double_blind) {
+            // Call the OCR API endpoint and handle the response
+            $response = Http::post(env('FLASK_API_URL2') . '/verify_author_names', ['paper_file_path' => $filePath]);
+        
+            if ($response->successful() && $response->json() && isset($response->json()['author_names_found'])) {
+                $authorNamesFound = $response->json()['author_names_found'];
+        
+                if ($authorNamesFound) {
+                    // If author names are found, delete the saved paper and the role
+                    $paper->delete();
+                    if ($user) {
+                        $user->conferences()->detach($conference);
+                    }
+                    return response()->json(['message' => 'Author names found in the paper. Paper submission failed.'], 400);
                 }
-                return response()->json(['message' => 'Author names found in the paper. Paper submission failed.'], 400);
+            } else {
+                // Handle the case when the response doesn't have the expected structure or fails
+                return response()->json(['message' => 'Error processing OCR.'], 500);
             }
-    
-            // If author names are not found, proceed with success message
-            return response()->json(['message' => 'Paper submitted successfully'], 200);
-        } else {
-            // Handle the case when the response doesn't have the expected structure or fails
-            return response()->json(['message' => 'Error processing OCR.'], 500);
         }
+        
+        // If double_blind is false or no author names found, proceed with success message
+        return response()->json(['message' => 'Paper submitted successfully'], 200);
+               
     }
     public function calculateAverageScore($paperId)
-    {
+{
     // Retrieve the paper object
     $paper = Paper::findOrFail($paperId);
 
@@ -138,11 +151,23 @@ class PaperController extends Controller
     // Initialize variables
     $totalWeightedSum = 0;
     $totalCoefficient = 0;
+    $questionIds = [];
 
     // Loop through each review
     foreach ($reviews as $review) {
+        // Log the raw answers data
+        \Log::info('Raw answers data: ' . $review->answers);
+
         // Decode answers JSON string to array
         $answers = json_decode($review->answers, true);
+
+        // Check if decoding was successful
+        if (!is_array($answers)) {
+            \Log::error('Failed to decode answers: ' . $review->answers);
+            // Skip this review if answers are not a valid JSON array
+            continue;
+        }
+        \Log::info($answers);
 
         // Retrieve the conference ID of the paper
         $conferenceId = $paper->conference_id;
@@ -162,8 +187,11 @@ class PaperController extends Controller
             ->where('id', $formId)
             ->first();
 
-        // Calculate weighted sum for answers
+        // Calculate weighted sum for answers and collect question IDs
         foreach ($answers as $questionId => $answer) {
+            // Add question ID to the list
+            $questionIds[] = $questionId;
+
             // Retrieve coefficient for this question
             $questionCoefficient = DB::table('questions')
                 ->where('id', $questionId)
@@ -171,30 +199,53 @@ class PaperController extends Controller
 
             // Add weighted sum for this question
             $totalWeightedSum += $answer * $questionCoefficient;
-            $totalCoefficient += $questionCoefficient;
-
         }
 
-        // Add weighted sum for finalDecision
-        $totalWeightedSum += $review->finalDecision * $coefficients->finalDecisionCoefficient;
-        $totalCoefficient += $coefficients->finalDecisionCoefficient;
+        // Retrieve final decision coefficient for this reviewer
+        $finalDecisionCoefficient = $coefficients->finalDecisionCoefficient;
 
-        // Add weighted sum for isEligible
-        $totalWeightedSum += ($review->isEligible === 'yes' ? 1 : 0) * $coefficients->eligibleCoefficient;
-        $totalCoefficient += $coefficients->eligibleCoefficient;
+        // Add weighted sum for finalDecision specific to this reviewer
+        $totalWeightedSum += $review->finalDecision * $finalDecisionCoefficient;
 
-        // Add weighted sum for confidentialRemarks
-        $totalWeightedSum += $review->confidentialRemarks * $coefficients->confidentialRemarksCoefficient;
-        $totalCoefficient += $coefficients->confidentialRemarksCoefficient;
+        // Retrieve eligibility coefficient for this reviewer
+        $eligibleCoefficient = $coefficients->eligibleCoefficient;
+
+        // Add weighted sum for isEligible specific to this reviewer
+        $totalWeightedSum += ($review->isEligible === 'yes' ? 1 : 0) * $eligibleCoefficient;
+
+        // Retrieve confidential remarks coefficient for this reviewer
+        $confidentialRemarksCoefficient = $coefficients->confidentialRemarksCoefficient;
+
+        // Add weighted sum for confidentialRemarks specific to this reviewer
+        $totalWeightedSum += $review->confidentialRemarks * $confidentialRemarksCoefficient;
     }
+
+    // Remove duplicate question IDs
+    $questionIds = array_unique($questionIds);
+
+    // Retrieve and sum the coefficients for all questions
+    $questionCoefficients = DB::table('questions')
+        ->whereIn('id', $questionIds)
+        ->pluck('coefficient')
+        ->toArray();
+
+    $totalQuestionCoefficient = array_sum($questionCoefficients);
+
+    // Retrieve form coefficients (assumed they are the same for all reviews)
+    $totalCoefficient = $totalQuestionCoefficient + $finalDecisionCoefficient + $eligibleCoefficient + $confidentialRemarksCoefficient;
 
     // Calculate total average
     $totalAverage = $totalCoefficient > 0 ? $totalWeightedSum / $totalCoefficient : 0;
+
+    // Update the paper's mark with the calculated average score
     $paper->mark = $totalAverage;
     $paper->save();
+
     // Return the total average
-    return  ['totalAverage' => $totalAverage, ];
-    }
+    return ['totalAverage' => $totalAverage];
+}
+
+    
     
      public function getPaperForAuthor($conferenceId, $userId)
     {
